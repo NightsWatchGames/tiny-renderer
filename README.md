@@ -1,4 +1,6 @@
 # tiny-renderer 简单的软光栅化渲染器
+- [x] Bresenham画线算法
+
 
 ## 参考
 - [ssloy/tinyrenderer](https://github.com/ssloy/tinyrenderer) and [wiki](https://github.com/ssloy/tinyrenderer/wiki)
@@ -6,3 +8,4 @@
 - [cadenji/foolrenderer](https://github.com/cadenji/foolrenderer#-how-to-learn-computer-graphics)
 - [线性代数的本质 - B站](https://www.bilibili.com/video/BV1ys411472E)
 - [GAMES101 - B站](https://www.bilibili.com/video/BV1X7411F744/)
+- [bresenham算法绘制直线 - B站](https://www.bilibili.com/video/BV1364y1d7Lo)
