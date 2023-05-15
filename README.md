@@ -1,5 +1,8 @@
 # tiny-renderer 简单的软光栅化渲染器
 - [x] Bresenham画线算法
+- [ ] glTF模型加载
+- [ ] 基础数学库
+- [ ] 背面剔除
 
 
 ## 参考
@@ -9,3 +12,4 @@
 - [线性代数的本质 - B站](https://www.bilibili.com/video/BV1ys411472E)
 - [GAMES101 - B站](https://www.bilibili.com/video/BV1X7411F744/)
 - [bresenham算法绘制直线 - B站](https://www.bilibili.com/video/BV1364y1d7Lo)
+- [如何开始用 C++ 写一个光栅化渲染器？ - 知乎](https://www.zhihu.com/question/24786878)

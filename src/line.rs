@@ -1,28 +1,7 @@
-use image::{ImageBuffer, RgbImage};
-
-fn main() {
-    let mut img: RgbImage = ImageBuffer::new(100, 100);
-    // 斜率大于0小于1
-    line((10, 10), (90, 60), &mut img, [0, 255, 0]);
-    line((90, 60), (10, 10), &mut img, [0, 255, 0]);
-    // 斜率大于1
-    line((10, 10), (60, 90), &mut img, [0, 255, 0]);
-    line((60, 90), (10, 10), &mut img, [0, 255, 0]);
-    // 斜率小于0大于-1
-    line((10, 90), (90, 40), &mut img, [0, 255, 0]);
-    line((90, 40), (10, 90), &mut img, [0, 255, 0]);
-    // 斜率小于-1
-    line((10, 90), (40, 10), &mut img, [0, 255, 0]);
-    line((40, 10), (10, 90), &mut img, [0, 255, 0]);
-    // 斜率为0
-    line((10, 50), (90, 50), &mut img, [0, 55, 0]);
-    // 斜率无穷大
-    line((50, 10), (50, 90), &mut img, [0, 55, 0]);
-    img.save("test.png").unwrap();
-}
+use image::RgbImage;
 
 // Bresenham画线算法
-fn line(p0: (i32, i32), p1: (i32, i32), img: &mut RgbImage, color: [u8; 3]) {
+pub fn draw_line(p0: (i32, i32), p1: (i32, i32), img: &mut RgbImage, color: [u8; 3]) {
     let (mut x0, mut y0) = p0;
     let (mut x1, mut y1) = p1;
 
