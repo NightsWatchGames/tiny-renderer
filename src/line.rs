@@ -56,7 +56,6 @@ pub fn draw_line(p0: (i32, i32), p1: (i32, i32), img: &mut RgbImage, color: [u8;
         x1 = y1;
         y1 = temp;
         flag0 = true;
-
     } else if y1 < y0 {
         // 斜率小于0
 
@@ -73,7 +72,6 @@ pub fn draw_line(p0: (i32, i32), p1: (i32, i32), img: &mut RgbImage, color: [u8;
             x1 = y1;
             y1 = temp;
             flag1 = true;
-
         } else {
             // 沿x轴对称后斜率小于1
             flag2 = true;
@@ -113,6 +111,5 @@ pub fn draw_line(p0: (i32, i32), p1: (i32, i32), img: &mut RgbImage, color: [u8;
         } else {
             img.put_pixel(x as u32, y as u32, image::Rgb(color));
         }
-
     }
 }

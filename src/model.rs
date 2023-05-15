@@ -18,7 +18,7 @@ pub fn load_glft(path: &str) -> Vec<[f32; 3]> {
                 }
             }
         }
-     }
-     vertex_positions
+    }
+    vertex_positions
     // println!("{:#?}", gltf);
 }

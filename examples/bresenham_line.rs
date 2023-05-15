@@ -1,4 +1,4 @@
-use image::{RgbImage, ImageBuffer};
+use image::{ImageBuffer, RgbImage};
 use tiny_renderer::line::draw_line;
 
 pub fn main() {
