@@ -13,3 +13,5 @@
 - [GAMES101 - B站](https://www.bilibili.com/video/BV1X7411F744/)
 - [bresenham算法绘制直线 - B站](https://www.bilibili.com/video/BV1364y1d7Lo)
 - [如何开始用 C++ 写一个光栅化渲染器？ - 知乎](https://www.zhihu.com/question/24786878)
+- [四元数的可视化 - B站](https://www.bilibili.com/video/BV1SW411y7W1)
+- [如何形象地理解四元数？ - 知乎](https://www.zhihu.com/question/23005815)

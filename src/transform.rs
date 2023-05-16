@@ -1,4 +1,4 @@
-use crate::math::{Mat3, Mat4, Vec3, Vec4};
+use crate::math::{Mat3, Mat4, Vec3, Vec4, Quat};
 
 // 缩放矩阵
 pub fn scale_mat4(scale: Vec3) -> Mat4 {
@@ -60,4 +60,7 @@ pub fn translation_mat4(translation: Vec3) -> Mat4 {
     }
 }
 
-// TODO 旋转矩阵
+// 旋转
+pub fn rotation_quat(axis: Vec3, angle: f32) -> Quat {
+    Quat::from_axis_angle(axis, angle)
+}

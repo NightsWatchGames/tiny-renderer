@@ -33,12 +33,7 @@ impl Vec2 {
     // 归一化
     pub fn normalize(self) -> Self {
         let normalized = self.mul(self.length().recip());
-        if !normalized.is_finite() {
-            panic!(
-                "Vec2::normalize: normalized is not finite: {:?}",
-                normalized
-            );
-        }
+        assert!(normalized.is_finite());
         normalized
     }
     pub fn is_finite(self) -> bool {
@@ -117,12 +112,7 @@ impl Vec3 {
     // 归一化
     pub fn normalize(self) -> Self {
         let normalized = self.mul(self.length().recip());
-        if !normalized.is_finite() {
-            panic!(
-                "Vec3::normalize: normalized is not finite: {:?}",
-                normalized
-            );
-        }
+        assert!(normalized.is_finite());
         normalized
     }
     pub fn is_finite(self) -> bool {
@@ -201,15 +191,13 @@ impl Vec4 {
     pub fn length(self) -> f32 {
         self.dot(self).sqrt()
     }
+    pub fn length_squared(self) -> f32 {
+        self.dot(self)
+    }
     // 归一化
     pub fn normalize(self) -> Self {
         let normalized = self.mul(self.length().recip());
-        if !normalized.is_finite() {
-            panic!(
-                "Vec4::normalize: normalized is not finite: {:?}",
-                normalized
-            );
-        }
+        assert!(normalized.is_finite());
         normalized
     }
     pub fn is_finite(self) -> bool {
@@ -513,11 +501,98 @@ impl Mul<Vec4> for Mat4 {
     }
 }
 
-//// TODO 四元数
+//// 四元数
 #[derive(Copy, Clone, Debug)]
 pub struct Quat {
     pub x: f32,
     pub y: f32,
     pub z: f32,
     pub w: f32,
+}
+impl Quat {
+    pub fn from_vec4(v: Vec4) -> Self {
+        Self {
+            x: v.x,
+            y: v.y,
+            z: v.z,
+            w: v.w,
+        }
+    }
+    // 共轭
+    pub fn conjugate(self) -> Self {
+        Self {
+            x: -self.x,
+            y: -self.y,
+            z: -self.z,
+            w: self.w,
+        }
+    }
+    // 四元数的逆
+    pub fn inverse(self) -> Self {
+        self.conjugate() * (1.0 / self.length_squared())
+    }
+    pub fn from_axis_angle(axis: Vec3, angle: f32) -> Self {
+        let (s, c) = (angle * 0.5).sin_cos();
+        let v = axis * s;
+        Self { x: v.x, y: v.y, z: v.z, w: c }
+    }
+    pub fn length(self) -> f32 {
+        Vec4::new(self.x, self.y, self.z, self.w).length()
+    }
+    pub fn length_squared(self) -> f32 {
+        Vec4::new(self.x, self.y, self.z, self.w).length_squared()
+    }
+}
+impl Add<Quat> for Quat {
+    type Output = Self;
+    fn add(self, rhs: Self) -> Self {
+        Self {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+            z: self.z + rhs.z,
+            w: self.w + rhs.w,
+        }
+    }
+}
+impl Sub<Quat> for Quat {
+    type Output = Self;
+    fn sub(self, rhs: Self) -> Self {
+        Self {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+            z: self.z - rhs.z,
+            w: self.w - rhs.w,
+        }
+    }
+}
+impl Mul<f32> for Quat {
+    type Output = Self;
+    fn mul(self, rhs: f32) -> Self {
+        Self {
+            x: self.x * rhs,
+            y: self.y * rhs,
+            z: self.z * rhs,
+            w: self.w * rhs,
+        }
+    }
+}
+impl Mul<Quat> for Quat {
+    type Output = Quat;
+    fn mul(self, rhs: Quat) -> Self::Output {
+        Self::Output {
+            x: self.w * rhs.x + self.x * rhs.w + self.y * rhs.z - self.z * rhs.y,
+            y: self.w * rhs.y + self.y * rhs.w + self.z * rhs.x - self.x * rhs.z,
+            z: self.w * rhs.z + self.z * rhs.w + self.x * rhs.y - self.y * rhs.x,
+            w: self.w * rhs.w - self.x * rhs.x - self.y * rhs.y - self.z * rhs.z,
+        }
+    }
+}
+impl Mul<Vec3> for Quat {
+    type Output = Vec3;
+    fn mul(self, rhs: Vec3) -> Self::Output {
+        let q = Quat::from_vec4(Vec4::new(rhs.x, rhs.y, rhs.z, 0.0));
+        let self_inv = self.inverse();
+        let v = self * q * self_inv;
+        Vec3::new(v.x, v.y, v.z)
+    }
 }
