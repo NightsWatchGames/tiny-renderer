@@ -19,5 +19,8 @@ pub fn main() {
     draw_line((10., 50.).into(), (90., 50.).into(), &mut img, [0, 55, 0]);
     // 斜率无穷大
     draw_line((50., 10.).into(), (50., 90.).into(), &mut img, [0, 55, 0]);
+
+    // 斜率大于0小于1，需要裁剪
+    draw_line((-10., 10.).into(), (90., 60.).into(), &mut img, [0, 255, 0]);
     img.save("screenshots/bresenham_line.png").unwrap();
 }

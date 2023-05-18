@@ -1,4 +1,4 @@
-use crate::math::{Vec3, Quat, Mat3};
+use crate::math::{Mat3, Quat, Vec3};
 
 //// 视椎体
 pub struct Frustum {

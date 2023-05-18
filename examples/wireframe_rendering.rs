@@ -10,8 +10,12 @@ pub fn main() {
     println!("last: {:?}", last);
     for pos in positions {
         draw_line(
-            ((last[0] + 1.0) * width / 3.0, (last[1] + 1.0) * height / 3.0).into(),
-            ((pos[0] + 1.0)  * width / 3.0, (pos[1] + 1.0) * height / 3.0).into(),
+            (
+                (last[0] + 1.0) * width / 3.0,
+                (last[1] + 1.0) * height / 3.0,
+            )
+                .into(),
+            ((pos[0] + 1.0) * width / 3.0, (pos[1] + 1.0) * height / 3.0).into(),
             &mut img,
             [0, 255, 0],
         );

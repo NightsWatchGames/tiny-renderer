@@ -4,6 +4,17 @@ use crate::math::Vec2;
 
 // Bresenham画线算法
 pub fn draw_line(p0: Vec2, p1: Vec2, img: &mut RgbImage, color: [u8; 3]) {
+    // 线段裁剪
+    let clip_result = line_clip(
+        p0,
+        p1,
+        Vec2::ZERO,
+        (img.width() as f32 - 1.0, img.height() as f32 - 1.0).into(),
+    );
+    if clip_result.is_none() {
+        return;
+    }
+    let (p0, p1) = clip_result.unwrap();
     let mut x0 = p0.x as i32;
     let mut y0 = p0.y as i32;
     let mut x1 = p1.x as i32;
@@ -119,6 +130,78 @@ pub fn draw_line(p0: Vec2, p1: Vec2, img: &mut RgbImage, color: [u8; 3]) {
 }
 
 // TODO Cohen-Sutherland线段裁剪算法
-pub fn line_clip(p0: Vec2, p1: Vec2, img: &mut RgbImage, color: [u8; 3]) {
+const INSIDE: u8 = 0; // 0000
+const LEFT: u8 = 1; // 0001
+const RIGHT: u8 = 2; // 0010
+const BOTTOM: u8 = 4; // 0100
+const TOP: u8 = 8; // 1000
+fn compute_out_code(p: &Vec2, min: &Vec2, max: &Vec2) -> u8 {
+    let horizontal_code = if p.x < min.x {
+        LEFT
+    } else if p.x > max.x {
+        RIGHT
+    } else {
+        INSIDE
+    };
+    let vertical_code = if p.y < min.y {
+        BOTTOM
+    } else if p.y > max.y {
+        TOP
+    } else {
+        INSIDE
+    };
+    horizontal_code | vertical_code
+}
+pub fn line_clip(
+    mut p0: Vec2,
+    mut p1: Vec2,
+    rect_min: Vec2,
+    rect_max: Vec2,
+) -> Option<(Vec2, Vec2)> {
+    let mut out_code0 = compute_out_code(&p0, &rect_min, &rect_max);
+    let mut out_code1 = compute_out_code(&p1, &rect_min, &rect_max);
 
+    loop {
+        if out_code0 & out_code1 != 0 {
+            // 两个点在inside外面的同一侧
+            return None;
+        } else if out_code0 | out_code1 == 0 {
+            // 两个点都在inside内
+            return Some((p0, p1));
+        }
+
+        // 至少有一个outcode在inside外面
+        let out_code = if out_code0 > out_code1 {
+            out_code0
+        } else {
+            out_code1
+        };
+
+        // 找到与矩形相交的边界
+        let mut p = Vec2::ZERO;
+        if out_code & TOP != 0 {
+            p.x = p0.x + (p1.x - p0.x) * (rect_max.y - p0.y) / (p1.y - p0.y);
+            p.y = rect_max.y;
+        } else if out_code & BOTTOM != 0 {
+            p.x = p0.x + (p0.x - p0.x) * (rect_min.y - p0.y) / (p1.y - p0.y);
+            p.y = rect_min.y;
+        } else if out_code & RIGHT != 0 {
+            p.x = rect_max.x;
+            p.y = p0.y + (p1.y - p0.y) * (rect_max.x - p0.x) / (p1.x - p0.x);
+        } else if out_code & LEFT != 0 {
+            p.x = rect_min.x;
+            p.y = p0.y + (p1.y - p0.y) * (rect_min.x - p0.x) / (p1.x - p0.x);
+        }
+
+        // 用相交的边界点替换原来的点
+        if out_code == out_code0 {
+            p0.x = p.x;
+            p0.y = p.y;
+            out_code0 = compute_out_code(&p0, &rect_min, &rect_max);
+        } else {
+            p1.x = p.x;
+            p1.y = p.y;
+            out_code1 = compute_out_code(&p1, &rect_min, &rect_max);
+        }
+    }
 }
