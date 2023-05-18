@@ -1,4 +1,4 @@
-use std::ops::{Add, Mul, Sub};
+use std::ops::{Add, Mul, Neg, Sub};
 
 //// 二维向量
 #[derive(Debug, Clone, Copy)]
@@ -65,6 +65,16 @@ impl Mul<f32> for Vec2 {
             x: self.x * rhs,
             y: self.y * rhs,
         }
+    }
+}
+impl From<Vec2> for (f32, f32) {
+    fn from(v: Vec2) -> Self {
+        (v.x, v.y)
+    }
+}
+impl From<(f32, f32)> for Vec2 {
+    fn from(v: (f32, f32)) -> Self {
+        Vec2::new(v.0, v.1)
     }
 }
 
@@ -147,6 +157,21 @@ impl Mul<f32> for Vec3 {
             y: self.y * rhs,
             z: self.z * rhs,
         }
+    }
+}
+impl Neg for Vec3 {
+    type Output = Self;
+    fn neg(self) -> Self {
+        Self {
+            x: -self.x,
+            y: -self.y,
+            z: -self.z,
+        }
+    }
+}
+impl From<Vec3> for (f32, f32, f32) {
+    fn from(v: Vec3) -> Self {
+        (v.x, v.y, v.z)
     }
 }
 
@@ -510,13 +535,20 @@ pub struct Quat {
     pub w: f32,
 }
 impl Quat {
-    pub fn from_vec4(v: Vec4) -> Self {
+    pub const ZERO: Self = Self::from_xyzw(0.0, 0.0, 0.0, 0.0);
+    // 恒等四元数（无旋转）
+    pub const IDENTITY: Self = Self::from_xyzw(0.0, 0.0, 0.0, 1.0);
+
+    pub const fn from_vec4(v: Vec4) -> Self {
         Self {
             x: v.x,
             y: v.y,
             z: v.z,
             w: v.w,
         }
+    }
+    pub const fn from_xyzw(x: f32, y: f32, z: f32, w: f32) -> Self {
+        Self { x, y, z, w }
     }
     // 共轭
     pub fn conjugate(self) -> Self {
@@ -534,7 +566,70 @@ impl Quat {
     pub fn from_axis_angle(axis: Vec3, angle: f32) -> Self {
         let (s, c) = (angle * 0.5).sin_cos();
         let v = axis * s;
-        Self { x: v.x, y: v.y, z: v.z, w: c }
+        Self {
+            x: v.x,
+            y: v.y,
+            z: v.z,
+            w: c,
+        }
+    }
+    // TODO 三维旋转矩阵->四元数
+    pub fn from_mat3(mat: &Mat3) -> Self {
+        // Based on https://github.com/microsoft/DirectXMath `XM$quaternionRotationMatrix`
+        let (m00, m01, m02) = mat.x_axis.into();
+        let (m10, m11, m12) = mat.y_axis.into();
+        let (m20, m21, m22) = mat.z_axis.into();
+        if m22 <= 0.0 {
+            // x^2 + y^2 >= z^2 + w^2
+            let dif10 = m11 - m00;
+            let omm22 = 1.0 - m22;
+            if dif10 <= 0.0 {
+                // x^2 >= y^2
+                let four_xsq = omm22 - dif10;
+                let inv4x = 0.5 / four_xsq.sqrt();
+                Self::from_xyzw(
+                    four_xsq * inv4x,
+                    (m01 + m10) * inv4x,
+                    (m02 + m20) * inv4x,
+                    (m12 - m21) * inv4x,
+                )
+            } else {
+                // y^2 >= x^2
+                let four_ysq = omm22 + dif10;
+                let inv4y = 0.5 / four_ysq.sqrt();
+                Self::from_xyzw(
+                    (m01 + m10) * inv4y,
+                    four_ysq * inv4y,
+                    (m12 + m21) * inv4y,
+                    (m20 - m02) * inv4y,
+                )
+            }
+        } else {
+            // z^2 + w^2 >= x^2 + y^2
+            let sum10 = m11 + m00;
+            let opm22 = 1.0 + m22;
+            if sum10 <= 0.0 {
+                // z^2 >= w^2
+                let four_zsq = opm22 - sum10;
+                let inv4z = 0.5 / four_zsq.sqrt();
+                Self::from_xyzw(
+                    (m02 + m20) * inv4z,
+                    (m12 + m21) * inv4z,
+                    four_zsq * inv4z,
+                    (m01 - m10) * inv4z,
+                )
+            } else {
+                // w^2 >= z^2
+                let four_wsq = opm22 + sum10;
+                let inv4w = 0.5 / four_wsq.sqrt();
+                Self::from_xyzw(
+                    (m12 - m21) * inv4w,
+                    (m20 - m02) * inv4w,
+                    (m01 - m10) * inv4w,
+                    four_wsq * inv4w,
+                )
+            }
+        }
     }
     pub fn length(self) -> f32 {
         Vec4::new(self.x, self.y, self.z, self.w).length()

@@ -1,6 +1,7 @@
 # tiny-renderer 简单的软光栅化渲染器
 - [x] 基础数学库
 - [x] Bresenham画线算法
+- [ ] Cohen-Sutherland线段裁剪算法
 - [ ] glTF模型加载
 - [ ] 背面剔除
 

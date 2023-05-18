@@ -14,5 +14,5 @@ name = "bresenham_line"
 path = "examples/bresenham_line.rs"
 
 [[example]]
-name = "wireframe"
-path = "examples/wireframe.rs"
+name = "wireframe_rendering"
+path = "examples/wireframe_rendering.rs"

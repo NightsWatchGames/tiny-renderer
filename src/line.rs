@@ -1,9 +1,13 @@
 use image::RgbImage;
 
+use crate::math::Vec2;
+
 // Bresenham画线算法
-pub fn draw_line(p0: (i32, i32), p1: (i32, i32), img: &mut RgbImage, color: [u8; 3]) {
-    let (mut x0, mut y0) = p0;
-    let (mut x1, mut y1) = p1;
+pub fn draw_line(p0: Vec2, p1: Vec2, img: &mut RgbImage, color: [u8; 3]) {
+    let mut x0 = p0.x as i32;
+    let mut y0 = p0.y as i32;
+    let mut x1 = p1.x as i32;
+    let mut y1 = p1.y as i32;
 
     // 斜率无穷大
     if x0 == x1 {
@@ -112,4 +116,9 @@ pub fn draw_line(p0: (i32, i32), p1: (i32, i32), img: &mut RgbImage, color: [u8;
             img.put_pixel(x as u32, y as u32, image::Rgb(color));
         }
     }
+}
+
+// TODO Cohen-Sutherland线段裁剪算法
+pub fn line_clip(p0: Vec2, p1: Vec2, img: &mut RgbImage, color: [u8; 3]) {
+
 }
