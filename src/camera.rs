@@ -1,4 +1,7 @@
-use crate::math::{Mat3, Quat, Vec3};
+use crate::{
+    math::{Mat3, Mat4, Quat, Vec3},
+    transform::translation_mat4,
+};
 
 //// 视椎体
 pub struct Frustum {
@@ -39,5 +42,12 @@ impl Camera {
         let right = up.cross(back).normalize();
         let up = back.cross(right);
         self.rotation = Quat::from_mat3(&Mat3::from_cols(right, up, back));
+    }
+    // 视图变换矩阵
+    pub fn view_mat4(&self) -> Mat4 {
+        let rotation_mat4 = self.rotation.to_mat4();
+        let translation_mat4 = translation_mat4(-self.position);
+        // 先平移再旋转
+        rotation_mat4 * translation_mat4
     }
 }

@@ -128,6 +128,9 @@ impl Vec3 {
     pub fn is_finite(self) -> bool {
         self.x.is_finite() && self.y.is_finite() && self.z.is_finite()
     }
+    pub fn is_normalized(self) -> bool {
+        (self.length() - 1.0).abs() < 1e-4
+    }
 }
 impl Add<Vec3> for Vec3 {
     type Output = Self;
@@ -172,6 +175,11 @@ impl Neg for Vec3 {
 impl From<Vec3> for (f32, f32, f32) {
     fn from(v: Vec3) -> Self {
         (v.x, v.y, v.z)
+    }
+}
+impl From<[f32; 3]> for Vec3 {
+    fn from(v: [f32; 3]) -> Self {
+        Vec3::new(v[0], v[1], v[2])
     }
 }
 
@@ -332,6 +340,7 @@ impl Mul<Vec2> for Mat2 {
 }
 
 //// 3x3按列存储矩阵
+#[derive(Clone, Copy, Debug)]
 pub struct Mat3 {
     pub x_axis: Vec3,
     pub y_axis: Vec3,
@@ -414,8 +423,19 @@ impl Mul<Vec3> for Mat3 {
         }
     }
 }
+impl Mul<Mat3> for Mat3 {
+    type Output = Self;
+    fn mul(self, rhs: Self) -> Self {
+        Self {
+            x_axis: self * rhs.x_axis,
+            y_axis: self * rhs.y_axis,
+            z_axis: self * rhs.z_axis,
+        }
+    }
+}
 
 //// 4x4按列存储矩阵
+#[derive(Debug, Clone, Copy)]
 pub struct Mat4 {
     pub x_axis: Vec4,
     pub y_axis: Vec4,
@@ -525,6 +545,17 @@ impl Mul<Vec4> for Mat4 {
         }
     }
 }
+impl Mul<Mat4> for Mat4 {
+    type Output = Self;
+    fn mul(self, rhs: Self) -> Self {
+        Self {
+            x_axis: self * rhs.x_axis,
+            y_axis: self * rhs.y_axis,
+            z_axis: self * rhs.z_axis,
+            w_axis: self * rhs.w_axis,
+        }
+    }
+}
 
 //// 四元数
 #[derive(Copy, Clone, Debug)]
@@ -563,7 +594,9 @@ impl Quat {
     pub fn inverse(self) -> Self {
         self.conjugate() * (1.0 / self.length_squared())
     }
+    // 绕轴旋转
     pub fn from_axis_angle(axis: Vec3, angle: f32) -> Self {
+        assert!(axis.is_normalized());
         let (s, c) = (angle * 0.5).sin_cos();
         let v = axis * s;
         Self {
@@ -573,7 +606,7 @@ impl Quat {
             w: c,
         }
     }
-    // TODO 三维旋转矩阵->四元数
+    // TODO 三维旋转矩阵->四元数 参考glam
     pub fn from_mat3(mat: &Mat3) -> Self {
         // Based on https://github.com/microsoft/DirectXMath `XM$quaternionRotationMatrix`
         let (m00, m01, m02) = mat.x_axis.into();
@@ -630,6 +663,19 @@ impl Quat {
                 )
             }
         }
+    }
+    // 四元数转换为旋转矩阵（齐次坐标）
+    pub fn to_mat4(self) -> Mat4 {
+        let (x, y, z, w) = (self.x, self.y, self.z, self.w);
+        let (xx, yy, zz) = (x * x, y * y, z * z);
+        let (xy, xz, yz) = (x * y, x * z, y * z);
+        let (wx, wy, wz) = (w * x, w * y, w * z);
+        Mat4::from_cols(
+            Vec4::new(1.0 - 2.0 * (yy + zz), 2.0 * (xy + wz), 2.0 * (xz - wy), 0.0),
+            Vec4::new(2.0 * (xy - wz), 1.0 - 2.0 * (xx + zz), 2.0 * (yz + wx), 0.0),
+            Vec4::new(2.0 * (xz + wy), 2.0 * (yz - wx), 1.0 - 2.0 * (xx + yy), 0.0),
+            Vec4::new(0.0, 0.0, 0.0, 1.0),
+        )
     }
     pub fn length(self) -> f32 {
         Vec4::new(self.x, self.y, self.z, self.w).length()

@@ -5,21 +5,59 @@ pub fn main() {
     let width = 100.0;
     let height = 100.0;
     let mut img: RgbImage = ImageBuffer::new(width as u32, height as u32);
-    let positions = load_glft("assets/sphere/sphere.gltf");
-    let mut last = positions.first().unwrap().clone();
-    println!("last: {:?}", last);
-    for pos in positions {
-        draw_line(
-            (
-                (last[0] + 1.0) * width / 3.0,
-                (last[1] + 1.0) * height / 3.0,
-            )
-                .into(),
-            ((pos[0] + 1.0) * width / 3.0, (pos[1] + 1.0) * height / 3.0).into(),
-            &mut img,
-            [0, 255, 0],
-        );
-        last = pos;
+    let meshes = load_glft("assets/sphere/sphere.gltf");
+    for mesh in meshes {
+        let mut i = 0;
+        loop {
+            if i > mesh.vertices.len() - 3 {
+                break;
+            }
+            // TODO 改成 draw_triangle
+            draw_line(
+                (
+                    (mesh.vertices[i].position.x + 1.0) * width / 3.0,
+                    (mesh.vertices[i].position.y + 1.0) * height / 3.0,
+                )
+                    .into(),
+                (
+                    (mesh.vertices[i + 1].position.x + 1.0) * width / 3.0,
+                    (mesh.vertices[i + 1].position.y + 1.0) * height / 3.0,
+                )
+                    .into(),
+                &mut img,
+                [0, 255, 0],
+            );
+            draw_line(
+                (
+                    (mesh.vertices[i + 1].position.x + 1.0) * width / 3.0,
+                    (mesh.vertices[i + 1].position.y + 1.0) * height / 3.0,
+                )
+                    .into(),
+                (
+                    (mesh.vertices[i + 2].position.x + 1.0) * width / 3.0,
+                    (mesh.vertices[i + 2].position.y + 1.0) * height / 3.0,
+                )
+                    .into(),
+                &mut img,
+                [0, 255, 0],
+            );
+            draw_line(
+                (
+                    (mesh.vertices[i + 2].position.x + 1.0) * width / 3.0,
+                    (mesh.vertices[i + 2].position.y + 1.0) * height / 3.0,
+                )
+                    .into(),
+                (
+                    (mesh.vertices[i].position.x + 1.0) * width / 3.0,
+                    (mesh.vertices[i].position.y + 1.0) * height / 3.0,
+                )
+                    .into(),
+                &mut img,
+                [0, 255, 0],
+            );
+
+            i += 3;
+        }
     }
     img.save("screenshots/wireframe_rendering.png").unwrap();
 }

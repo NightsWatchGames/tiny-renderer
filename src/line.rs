@@ -129,7 +129,7 @@ pub fn draw_line(p0: Vec2, p1: Vec2, img: &mut RgbImage, color: [u8; 3]) {
     }
 }
 
-// TODO Cohen-Sutherland线段裁剪算法
+// Cohen-Sutherland线段裁剪算法
 const INSIDE: u8 = 0; // 0000
 const LEFT: u8 = 1; // 0001
 const RIGHT: u8 = 2; // 0010

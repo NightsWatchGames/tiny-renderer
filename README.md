@@ -3,7 +3,10 @@
 - [x] Bresenham画线算法
 - [x] Cohen-Sutherland线段裁剪算法
 - [ ] glTF模型加载
+- [ ] 模型/视图/投影变换
 - [ ] 背面剔除
+- [ ] 深度缓冲
+- [ ] Blinn–Phong着色模型
 
 
 ## 参考
