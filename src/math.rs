@@ -39,6 +39,9 @@ impl Vec2 {
     pub fn is_finite(self) -> bool {
         self.x.is_finite() && self.y.is_finite()
     }
+    pub fn extend(self, z: f32) -> Vec3 {
+        Vec3::new(self.x, self.y, z)
+    }
 }
 impl Add<Vec2> for Vec2 {
     type Output = Self;
@@ -130,6 +133,9 @@ impl Vec3 {
     }
     pub fn is_normalized(self) -> bool {
         (self.length() - 1.0).abs() < 1e-4
+    }
+    pub fn extend(self, w: f32) -> Vec4 {
+        Vec4::new(self.x, self.y, self.z, w)
     }
 }
 impl Add<Vec3> for Vec3 {
@@ -235,6 +241,14 @@ impl Vec4 {
     }
     pub fn is_finite(self) -> bool {
         self.x.is_finite() && self.y.is_finite() && self.z.is_finite() && self.w.is_finite()
+    }
+    pub fn to_cartesian_point(self) -> Vec3 {
+        assert!(self.w != 0.0);
+        Vec3::new(self.x / self.w, self.y / self.w, self.z / self.w)
+    }
+    pub fn to_cartesian_vector(self) -> Vec3 {
+        assert!(self.w == 0.0);
+        Vec3::new(self.x, self.y, self.z)
     }
 }
 impl Add<Vec4> for Vec4 {
@@ -453,6 +467,15 @@ impl Mat4 {
             y_axis,
             z_axis,
             w_axis,
+        }
+    }
+    pub const fn from_rows_slice(slice: &[f32]) -> Self {
+        assert!(slice.len() >= 16);
+        Self {
+            x_axis: Vec4::new(slice[0], slice[4], slice[8], slice[12]),
+            y_axis: Vec4::new(slice[1], slice[5], slice[9], slice[13]),
+            z_axis: Vec4::new(slice[2], slice[6], slice[10], slice[14]),
+            w_axis: Vec4::new(slice[3], slice[7], slice[11], slice[15]),
         }
     }
     // 转置

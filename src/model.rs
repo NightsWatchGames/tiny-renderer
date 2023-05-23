@@ -1,5 +1,3 @@
-use std::{fs, io};
-
 use crate::math::{Vec2, Vec3, Vec4};
 
 #[derive(Clone, Copy, Debug)]
