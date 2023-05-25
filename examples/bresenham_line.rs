@@ -1,26 +1,66 @@
-use image::{ImageBuffer, RgbImage};
-use tiny_renderer::line::draw_line;
+use fltk::{
+    app::set_visual,
+    enums::Mode,
+    prelude::{GroupExt, WidgetBase, WidgetExt},
+    window::Window,
+};
+use rand::Rng;
+use tiny_renderer::{
+    camera::Camera,
+    math::Vec2,
+    renderer::{Color, Renderer, Viewport},
+};
+
+const WINDOW_WIDTH: u32 = 1024;
+const WINDOW_HEIGHT: u32 = 720;
 
 pub fn main() {
-    let mut img: RgbImage = ImageBuffer::new(100, 100);
-    // 斜率大于0小于1
-    draw_line((10., 10.).into(), (90., 60.).into(), &mut img, [0, 255, 0]);
-    draw_line((90., 60.).into(), (10., 10.).into(), &mut img, [0, 255, 0]);
-    // 斜率大于1
-    draw_line((10., 10.).into(), (60., 90.).into(), &mut img, [0, 255, 0]);
-    draw_line((60., 90.).into(), (10., 10.).into(), &mut img, [0, 255, 0]);
-    // 斜率小于0大于-1
-    draw_line((10., 90.).into(), (90., 40.).into(), &mut img, [0, 255, 0]);
-    draw_line((90., 40.).into(), (10., 90.).into(), &mut img, [0, 255, 0]);
-    // 斜率小于-1
-    draw_line((10., 90.).into(), (40., 10.).into(), &mut img, [0, 255, 0]);
-    draw_line((40., 10.).into(), (10., 90.).into(), &mut img, [0, 255, 0]);
-    // 斜率为0
-    draw_line((10., 50.).into(), (90., 50.).into(), &mut img, [0, 55, 0]);
-    // 斜率无穷大
-    draw_line((50., 10.).into(), (50., 90.).into(), &mut img, [0, 55, 0]);
+    let app = fltk::app::App::default();
+    let mut wind = Window::new(
+        100,
+        100,
+        WINDOW_WIDTH as i32,
+        WINDOW_HEIGHT as i32,
+        "bresenham line",
+    );
 
-    // 斜率大于0小于1，需要裁剪
-    draw_line((-10., 10.).into(), (90., 60.).into(), &mut img, [0, 255, 0]);
-    img.save("screenshots/bresenham_line.png").unwrap();
+    let camera = Camera::new(
+        -1.0,
+        -1000.0,
+        WINDOW_WIDTH as f32 / WINDOW_HEIGHT as f32,
+        30.0f32.to_radians(),
+    );
+    let viewport = Viewport::new(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+    let mut renderer = Renderer::new(camera, viewport);
+    wind.draw(move |_| {
+        renderer.clear();
+        let mut rng = rand::thread_rng();
+        for _ in 0..50 {
+            renderer.draw_line(
+                Vec2::new(
+                    rng.gen_range(0.0..WINDOW_WIDTH as f32),
+                    rng.gen_range(0.0..WINDOW_WIDTH as f32),
+                ),
+                Vec2::new(
+                    rng.gen_range(0.0..WINDOW_WIDTH as f32),
+                    rng.gen_range(0.0..WINDOW_WIDTH as f32),
+                ),
+                Color::GREEN,
+            );
+        }
+        fltk::draw::draw_image(
+            &renderer.frame_buffer,
+            0,
+            0,
+            WINDOW_WIDTH as i32,
+            WINDOW_HEIGHT as i32,
+            fltk::enums::ColorDepth::Rgb8,
+        )
+        .unwrap();
+    });
+
+    wind.end();
+    set_visual(Mode::Rgb).unwrap();
+    wind.show();
+    app.run().unwrap();
 }

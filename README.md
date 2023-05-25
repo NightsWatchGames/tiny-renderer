@@ -9,6 +9,14 @@
 - [ ] Blinn–Phong着色模型
 - [x] 重心坐标插值
 
+## 运行
+1. bresenham画线算法
+```
+cargo run --example bresenham_line
+```
+
+## 截图
+![bresenham_line](./screenshots/bresenham_line.png)
 
 ## 参考
 - [ssloy/tinyrenderer](https://github.com/ssloy/tinyrenderer) and [wiki](https://github.com/ssloy/tinyrenderer/wiki)

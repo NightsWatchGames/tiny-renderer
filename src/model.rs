@@ -11,6 +11,7 @@ pub struct Vertex {
     // 顶点颜色
     pub color: Vec4,
 }
+#[derive(Clone, Debug)]
 pub struct Mesh {
     // 顶点数据（拓扑类型为Triangles）
     pub vertices: Vec<Vertex>,
