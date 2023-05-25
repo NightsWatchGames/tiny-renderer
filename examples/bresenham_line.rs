@@ -7,7 +7,7 @@ use fltk::{
 use rand::Rng;
 use tiny_renderer::{
     camera::Camera,
-    math::Vec2,
+    math::{Vec2, Vec3},
     renderer::{Color, Renderer, Viewport},
 };
 
@@ -29,12 +29,23 @@ pub fn main() {
         -1000.0,
         WINDOW_WIDTH as f32 / WINDOW_HEIGHT as f32,
         30.0f32.to_radians(),
+        Vec3::ZERO,
     );
     let viewport = Viewport::new(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
     let mut renderer = Renderer::new(camera, viewport);
     wind.draw(move |_| {
         renderer.clear();
         let mut rng = rand::thread_rng();
+        renderer.draw_line(
+            Vec2::new(10.0, WINDOW_HEIGHT as f32 / 2.0),
+            Vec2::new(WINDOW_WIDTH as f32, WINDOW_HEIGHT as f32 / 2.0),
+            Color::GREEN,
+        );
+        renderer.draw_line(
+            Vec2::new(WINDOW_WIDTH as f32 / 2.0, 10.0),
+            Vec2::new(WINDOW_WIDTH as f32 / 2.0, WINDOW_HEIGHT as f32),
+            Color::GREEN,
+        );
         for _ in 0..50 {
             renderer.draw_line(
                 Vec2::new(

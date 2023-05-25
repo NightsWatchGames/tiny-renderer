@@ -1,7 +1,7 @@
 use std::ops::{Add, Mul, Neg, Sub};
 
 //// 二维向量
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct Vec2 {
     pub x: f32,
     pub y: f32,
@@ -82,7 +82,7 @@ impl From<(f32, f32)> for Vec2 {
 }
 
 //// 三维向量
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct Vec3 {
     pub x: f32,
     pub y: f32,
@@ -190,7 +190,7 @@ impl From<[f32; 3]> for Vec3 {
 }
 
 //// 四维向量
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct Vec4 {
     pub x: f32,
     pub y: f32,
@@ -241,6 +241,9 @@ impl Vec4 {
     }
     pub fn is_finite(self) -> bool {
         self.x.is_finite() && self.y.is_finite() && self.z.is_finite() && self.w.is_finite()
+    }
+    pub fn is_normalized(self) -> bool {
+        (self.length_squared() - 1.0).abs() <= 1e-4
     }
     pub fn to_cartesian_point(self) -> Vec3 {
         assert!(self.w != 0.0);
@@ -615,7 +618,8 @@ impl Quat {
     }
     // 四元数的逆
     pub fn inverse(self) -> Self {
-        self.conjugate() * (1.0 / self.length_squared())
+        assert!(self.is_normalized());
+        self.conjugate()
     }
     // 绕轴旋转
     pub fn from_axis_angle(axis: Vec3, angle: f32) -> Self {
@@ -689,6 +693,7 @@ impl Quat {
     }
     // 四元数转换为旋转矩阵（齐次坐标）
     pub fn to_mat4(self) -> Mat4 {
+        assert!(self.is_normalized());
         let (x, y, z, w) = (self.x, self.y, self.z, self.w);
         let (xx, yy, zz) = (x * x, y * y, z * z);
         let (xy, xz, yz) = (x * y, x * z, y * z);
@@ -697,7 +702,7 @@ impl Quat {
             Vec4::new(1.0 - 2.0 * (yy + zz), 2.0 * (xy + wz), 2.0 * (xz - wy), 0.0),
             Vec4::new(2.0 * (xy - wz), 1.0 - 2.0 * (xx + zz), 2.0 * (yz + wx), 0.0),
             Vec4::new(2.0 * (xz + wy), 2.0 * (yz - wx), 1.0 - 2.0 * (xx + yy), 0.0),
-            Vec4::new(0.0, 0.0, 0.0, 1.0),
+            Vec4::W,
         )
     }
     pub fn length(self) -> f32 {
@@ -705,6 +710,9 @@ impl Quat {
     }
     pub fn length_squared(self) -> f32 {
         Vec4::new(self.x, self.y, self.z, self.w).length_squared()
+    }
+    pub fn is_normalized(self) -> bool {
+        Vec4::new(self.x, self.y, self.z, self.w).is_normalized()
     }
 }
 impl Add<Quat> for Quat {

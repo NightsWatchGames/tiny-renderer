@@ -59,21 +59,29 @@ impl Renderer {
             depth_buffer: vec![std::f32::MAX; pixel_count],
         }
     }
-    pub fn draw(&mut self, mesh: &Mesh, model_transformation: Mat4) {
-        for i in 0..mesh.vertices.len() / 3 {
-            let vertices = [
-                mesh.vertices[i * 3],
-                mesh.vertices[1 + i * 3],
-                mesh.vertices[2 + i * 3],
-            ];
-            self.rasterize_trianlge(model_transformation, vertices);
+    pub fn draw(&mut self, meshes: &Vec<Mesh>, model_transformation: Mat4) {
+        for mesh in meshes {
+            for i in 0..mesh.vertices.len() / 3 {
+                let vertices = [
+                    mesh.vertices[i * 3],
+                    mesh.vertices[1 + i * 3],
+                    mesh.vertices[2 + i * 3],
+                ];
+                self.rasterize_trianlge(model_transformation, vertices);
+            }
         }
     }
     pub fn rasterize_trianlge(&mut self, model_transformation: Mat4, mut vertices: [Vertex; 3]) {
+        for vertex in vertices.iter() {
+            println!("before model trans, pos: {:?}", vertex.position);
+        }
         // 模型变换
         for vertex in vertices.iter_mut() {
             vertex.position =
                 (model_transformation * vertex.position.extend(1.0)).to_cartesian_point();
+        }
+        for vertex in vertices.iter() {
+            // println!("after model trans, pos: {:?}", vertex.position);
         }
 
         // 视图变换
@@ -82,12 +90,19 @@ impl Renderer {
             vertex.position =
                 (view_transformation * vertex.position.extend(1.0)).to_cartesian_point();
         }
+        for vertex in vertices.iter() {
+            println!("after view trans, pos: {:?}", vertex.position);
+        }
 
         // 投影变换
-        let projection_transformation = self.camera.frustum.projection_transformation();
+        // let projection_transformation = self.camera.frustum.persp_projection_transformation();
+        let projection_transformation = self.camera.frustum.ortho_projection_transformation();
         for vertex in vertices.iter_mut() {
             vertex.position =
                 (projection_transformation * vertex.position.extend(1.0)).to_cartesian_point();
+        }
+        for vertex in vertices.iter() {
+            println!("after proj trans, pos: {:?}", vertex.position);
         }
 
         // 视口变换
@@ -100,6 +115,27 @@ impl Renderer {
                 / 2.0
                 + self.viewport.y as f32;
         }
+        for vertex in vertices.iter() {
+            println!(
+                "draw_line phase, x: {}, y: {}",
+                vertex.position.x, vertex.position.y
+            );
+        }
+        self.draw_line(
+            Vec2::new(vertices[0].position.x, vertices[0].position.y),
+            Vec2::new(vertices[1].position.x, vertices[1].position.y),
+            Color::RED,
+        );
+        self.draw_line(
+            Vec2::new(vertices[1].position.x, vertices[1].position.y),
+            Vec2::new(vertices[2].position.x, vertices[2].position.y),
+            Color::RED,
+        );
+        self.draw_line(
+            Vec2::new(vertices[2].position.x, vertices[2].position.y),
+            Vec2::new(vertices[0].position.x, vertices[0].position.y),
+            Color::RED,
+        );
     }
 
     // 绘制像素点

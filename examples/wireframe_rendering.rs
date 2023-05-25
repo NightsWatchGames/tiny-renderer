@@ -6,8 +6,10 @@ use fltk::{
 };
 use tiny_renderer::{
     camera::Camera,
-    model::load_glft,
+    math::Vec3,
+    model::{custom_cube, custom_mesh, load_glft},
     renderer::{Color, Renderer, Viewport},
+    transform::translation_mat4,
 };
 
 const WINDOW_WIDTH: u32 = 1024;
@@ -20,70 +22,30 @@ pub fn main() {
         100,
         WINDOW_WIDTH as i32,
         WINDOW_HEIGHT as i32,
-        "bresenham line",
+        "wireframe rendering",
     );
 
-    let meshes = load_glft("assets/sphere/sphere.gltf");
-    let camera = Camera::new(
-        -1.0,
+    // let meshes = load_glft("assets/cube/cube.gltf");
+    let meshes = vec![custom_cube()];
+    let mesh_pos = Vec3::new(0.0, 0.0, -10.0);
+    let model_transformation = translation_mat4(mesh_pos);
+
+    let mut camera = Camera::new(
+        -5.0,
         -1000.0,
         WINDOW_WIDTH as f32 / WINDOW_HEIGHT as f32,
-        30.0f32.to_radians(),
+        60.0f32.to_radians(),
+        // Vec3::ZERO
+        Vec3::new(3.0, 3.0, 0.0),
     );
+    camera.look_at(mesh_pos, Vec3::Y);
+
     let viewport = Viewport::new(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
     let mut renderer = Renderer::new(camera, viewport);
+
     wind.draw(move |_| {
         renderer.clear();
-        for mesh in meshes.clone() {
-            let mut i = 0;
-            loop {
-                if i > mesh.vertices.len() - 3 {
-                    break;
-                }
-                // TODO 改成 draw_triangle
-                renderer.draw_line(
-                    (
-                        (mesh.vertices[i].position.x + 1.0) * WINDOW_WIDTH as f32 / 3.0,
-                        (mesh.vertices[i].position.y + 1.0) * WINDOW_HEIGHT as f32 / 3.0,
-                    )
-                        .into(),
-                    (
-                        (mesh.vertices[i + 1].position.x + 1.0) * WINDOW_WIDTH as f32 / 3.0,
-                        (mesh.vertices[i + 1].position.y + 1.0) * WINDOW_HEIGHT as f32 / 3.0,
-                    )
-                        .into(),
-                    Color::GREEN,
-                );
-                renderer.draw_line(
-                    (
-                        (mesh.vertices[i + 1].position.x + 1.0) * WINDOW_WIDTH as f32 / 3.0,
-                        (mesh.vertices[i + 1].position.y + 1.0) * WINDOW_HEIGHT as f32 / 3.0,
-                    )
-                        .into(),
-                    (
-                        (mesh.vertices[i + 2].position.x + 1.0) * WINDOW_WIDTH as f32 / 3.0,
-                        (mesh.vertices[i + 2].position.y + 1.0) * WINDOW_HEIGHT as f32 / 3.0,
-                    )
-                        .into(),
-                    Color::GREEN,
-                );
-                renderer.draw_line(
-                    (
-                        (mesh.vertices[i + 2].position.x + 1.0) * WINDOW_WIDTH as f32 / 3.0,
-                        (mesh.vertices[i + 2].position.y + 1.0) * WINDOW_HEIGHT as f32 / 3.0,
-                    )
-                        .into(),
-                    (
-                        (mesh.vertices[i].position.x + 1.0) * WINDOW_WIDTH as f32 / 3.0,
-                        (mesh.vertices[i].position.y + 1.0) * WINDOW_HEIGHT as f32 / 3.0,
-                    )
-                        .into(),
-                    Color::GREEN,
-                );
-
-                i += 3;
-            }
-        }
+        renderer.draw(&meshes, model_transformation);
         fltk::draw::draw_image(
             &renderer.frame_buffer,
             0,

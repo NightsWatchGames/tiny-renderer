@@ -14,9 +14,14 @@
 ```
 cargo run --example bresenham_line
 ```
+2. 线框渲染
+```
+cargo run --example wireframe_rendering
+```
 
 ## 截图
 ![bresenham_line](./screenshots/bresenham_line.png)
+![wireframe_rendering](./screenshots/wireframe_rendering.png)
 
 ## 参考
 - [ssloy/tinyrenderer](https://github.com/ssloy/tinyrenderer) and [wiki](https://github.com/ssloy/tinyrenderer/wiki)
