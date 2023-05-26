@@ -8,7 +8,8 @@ use rand::Rng;
 use tiny_renderer::{
     camera::Camera,
     math::{Vec2, Vec3},
-    renderer::{Color, Renderer, Viewport},
+    renderer::{Color, Renderer, RendererSettings, Viewport},
+    util::flip_vertically,
 };
 
 const WINDOW_WIDTH: u32 = 1024;
@@ -32,7 +33,7 @@ pub fn main() {
         Vec3::ZERO,
     );
     let viewport = Viewport::new(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-    let mut renderer = Renderer::new(camera, viewport);
+    let mut renderer = Renderer::new(camera, viewport, RendererSettings::default());
     wind.draw(move |_| {
         renderer.clear();
         let mut rng = rand::thread_rng();
@@ -60,7 +61,11 @@ pub fn main() {
             );
         }
         fltk::draw::draw_image(
-            &renderer.frame_buffer,
+            &flip_vertically(
+                &renderer.frame_buffer,
+                WINDOW_WIDTH as usize,
+                WINDOW_HEIGHT as usize,
+            ),
             0,
             0,
             WINDOW_WIDTH as i32,

@@ -36,8 +36,10 @@ impl Frustum {
             0., 0., 2. / (self.near - self.far), 0.,
             0., 0., 0., 1.,
         ]);
-        ortho_translation * ortho_scale * persp_to_ortho
+        ortho_scale * ortho_translation * persp_to_ortho
     }
+
+    // 正交投影变换矩阵
     #[rustfmt::skip]
     pub fn ortho_projection_transformation(&self) -> Mat4 {
         println!("width_near: {}, height_near: {}", self.width_near(), self.height_near());

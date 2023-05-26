@@ -1,3 +1,5 @@
+use std::default;
+
 use crate::{
     camera::Camera,
     math::{Mat4, Vec2, Vec3},
@@ -36,25 +38,41 @@ impl Color {
     pub const RED: Self = Self::new(255, 0, 0);
     pub const GREEN: Self = Self::new(0, 255, 0);
     pub const BLUE: Self = Self::new(0, 0, 255);
+    pub const WHITE: Self = Self::new(255, 255, 255);
+
     pub const fn new(r: u8, g: u8, b: u8) -> Self {
         Self { r, g, b }
     }
 }
 
+#[derive(Debug, Clone, Copy, Default)]
+pub struct RendererSettings {
+    pub projection: Projection,
+    pub wireframe: bool,
+}
+#[derive(Debug, Clone, Copy, Default)]
+pub enum Projection {
+    #[default]
+    Perspective,
+    Orthographic,
+}
+
 pub struct Renderer {
     pub camera: Camera,
     pub viewport: Viewport,
+    pub settings: RendererSettings,
     // 帧缓冲
     pub frame_buffer: Vec<u8>,
     // 深度缓冲
     pub depth_buffer: Vec<f32>,
 }
 impl Renderer {
-    pub fn new(camera: Camera, viewport: Viewport) -> Self {
+    pub fn new(camera: Camera, viewport: Viewport, settings: RendererSettings) -> Self {
         let pixel_count = (viewport.width * viewport.height) as usize;
         Self {
             camera,
             viewport,
+            settings,
             frame_buffer: vec![0; pixel_count * 3],
             depth_buffer: vec![std::f32::MAX; pixel_count],
         }
@@ -94,15 +112,22 @@ impl Renderer {
             println!("after view trans, pos: {:?}", vertex.position);
         }
 
+        // TODO 视椎体裁剪
+
         // 投影变换
-        // let projection_transformation = self.camera.frustum.persp_projection_transformation();
-        let projection_transformation = self.camera.frustum.ortho_projection_transformation();
+        let projection_transformation = match self.settings.projection {
+            Projection::Perspective => self.camera.frustum.persp_projection_transformation(),
+            Projection::Orthographic => self.camera.frustum.ortho_projection_transformation(),
+        };
         for vertex in vertices.iter_mut() {
             vertex.position =
                 (projection_transformation * vertex.position.extend(1.0)).to_cartesian_point();
         }
         for vertex in vertices.iter() {
             println!("after proj trans, pos: {:?}", vertex.position);
+            assert!(vertex.position.x.abs() <= 1.0);
+            assert!(vertex.position.y.abs() <= 1.0);
+            assert!(vertex.position.z.abs() <= 1.0);
         }
 
         // 视口变换
@@ -121,21 +146,25 @@ impl Renderer {
                 vertex.position.x, vertex.position.y
             );
         }
-        self.draw_line(
-            Vec2::new(vertices[0].position.x, vertices[0].position.y),
-            Vec2::new(vertices[1].position.x, vertices[1].position.y),
-            Color::RED,
-        );
-        self.draw_line(
-            Vec2::new(vertices[1].position.x, vertices[1].position.y),
-            Vec2::new(vertices[2].position.x, vertices[2].position.y),
-            Color::RED,
-        );
-        self.draw_line(
-            Vec2::new(vertices[2].position.x, vertices[2].position.y),
-            Vec2::new(vertices[0].position.x, vertices[0].position.y),
-            Color::RED,
-        );
+        if self.settings.wireframe {
+            self.draw_line(
+                Vec2::new(vertices[0].position.x, vertices[0].position.y),
+                Vec2::new(vertices[1].position.x, vertices[1].position.y),
+                Color::WHITE,
+            );
+            self.draw_line(
+                Vec2::new(vertices[1].position.x, vertices[1].position.y),
+                Vec2::new(vertices[2].position.x, vertices[2].position.y),
+                Color::WHITE,
+            );
+            self.draw_line(
+                Vec2::new(vertices[2].position.x, vertices[2].position.y),
+                Vec2::new(vertices[0].position.x, vertices[0].position.y),
+                Color::WHITE,
+            );
+        } else {
+            todo!("draw triangle")
+        }
     }
 
     // 绘制像素点
