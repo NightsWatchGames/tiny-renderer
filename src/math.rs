@@ -137,6 +137,9 @@ impl Vec3 {
     pub fn extend(self, w: f32) -> Vec4 {
         Vec4::new(self.x, self.y, self.z, w)
     }
+    pub fn truncate(self) -> Vec2 {
+        Vec2::new(self.x, self.y)
+    }
 }
 impl Add<Vec3> for Vec3 {
     type Output = Self;

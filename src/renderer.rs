@@ -1,4 +1,4 @@
-use std::default;
+use std::ops::{Add, Mul};
 
 use crate::{
     camera::Camera,
@@ -44,17 +44,56 @@ impl Color {
         Self { r, g, b }
     }
 }
+impl Default for Color {
+    fn default() -> Self {
+        Self::BLACK
+    }
+}
+impl Add<Color> for Color {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self::new(
+            self.r.saturating_add(rhs.r),
+            self.g.saturating_add(rhs.g),
+            self.b.saturating_add(rhs.b),
+        )
+    }
+}
+impl Mul<f32> for Color {
+    type Output = Self;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        Self::new(
+            (self.r as f32 * rhs) as u8,
+            (self.g as f32 * rhs) as u8,
+            (self.b as f32 * rhs) as u8,
+        )
+    }
+}
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct RendererSettings {
     pub projection: Projection,
     pub wireframe: bool,
+    pub fill: bool,
 }
 #[derive(Debug, Clone, Copy, Default)]
 pub enum Projection {
     #[default]
     Perspective,
     Orthographic,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Aabb2d {
+    pub min: Vec2,
+    pub max: Vec2,
+}
+impl Aabb2d {
+    pub fn new(min: Vec2, max: Vec2) -> Self {
+        Self { min, max }
+    }
 }
 
 pub struct Renderer {
@@ -74,7 +113,7 @@ impl Renderer {
             viewport,
             settings,
             frame_buffer: vec![0; pixel_count * 3],
-            depth_buffer: vec![std::f32::MAX; pixel_count],
+            depth_buffer: vec![std::f32::MIN; pixel_count],
         }
     }
     pub fn draw(&mut self, meshes: &Vec<Mesh>, model_transformation: Mat4) {
@@ -91,7 +130,7 @@ impl Renderer {
     }
     pub fn rasterize_trianlge(&mut self, model_transformation: Mat4, mut vertices: [Vertex; 3]) {
         for vertex in vertices.iter() {
-            println!("before model trans, pos: {:?}", vertex.position);
+            // println!("before model trans, pos: {:?}", vertex.position);
         }
         // 模型变换
         for vertex in vertices.iter_mut() {
@@ -109,7 +148,7 @@ impl Renderer {
                 (view_transformation * vertex.position.extend(1.0)).to_cartesian_point();
         }
         for vertex in vertices.iter() {
-            println!("after view trans, pos: {:?}", vertex.position);
+            // println!("after view trans, pos: {:?}", vertex.position);
         }
 
         // TODO 视椎体裁剪
@@ -124,7 +163,7 @@ impl Renderer {
                 (projection_transformation * vertex.position.extend(1.0)).to_cartesian_point();
         }
         for vertex in vertices.iter() {
-            println!("after proj trans, pos: {:?}", vertex.position);
+            // println!("after proj trans, pos: {:?}", vertex.position);
             assert!(vertex.position.x.abs() <= 1.0);
             assert!(vertex.position.y.abs() <= 1.0);
             assert!(vertex.position.z.abs() <= 1.0);
@@ -141,11 +180,13 @@ impl Renderer {
                 + self.viewport.y as f32;
         }
         for vertex in vertices.iter() {
-            println!(
-                "draw_line phase, x: {}, y: {}",
-                vertex.position.x, vertex.position.y
-            );
+            // println!(
+            // "draw_line phase, x: {}, y: {}",
+            // vertex.position.x, vertex.position.y
+            // );
         }
+
+        // 线框渲染
         if self.settings.wireframe {
             self.draw_line(
                 Vec2::new(vertices[0].position.x, vertices[0].position.y),
@@ -162,8 +203,37 @@ impl Renderer {
                 Vec2::new(vertices[0].position.x, vertices[0].position.y),
                 Color::WHITE,
             );
-        } else {
-            todo!("draw triangle")
+        }
+
+        // 填充像素点
+        if self.settings.fill {
+            let aabb2d = bounding_box2d(&vertices.map(|v| Vec2::new(v.position.x, v.position.y)));
+            for x in aabb2d.min.x as u32..=aabb2d.max.x as u32 {
+                for y in aabb2d.min.y as u32..=aabb2d.max.y as u32 {
+                    let p = Vec2::new(x as f32, y as f32);
+                    let (alpha, beta, gamma) = barycentric_2d(
+                        p,
+                        vertices[0].position.truncate(),
+                        vertices[1].position.truncate(),
+                        vertices[2].position.truncate(),
+                    );
+                    // 判断是否在三角形内
+                    if alpha > 0.0 && beta > 0.0 && gamma > 0.0 {
+                        let z = alpha * vertices[0].position.z
+                            + beta * vertices[1].position.z
+                            + gamma * vertices[2].position.z;
+                        let index = (y * self.viewport.width + x) as usize;
+                        // 深度测试
+                        if z > self.depth_buffer[index] {
+                            self.depth_buffer[index] = z;
+                            let color = vertices[0].color * alpha
+                                + vertices[1].color * beta
+                                + vertices[2].color * gamma;
+                            self.draw_pixel(p, color);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -317,26 +387,30 @@ impl Renderer {
 
     pub fn clear(&mut self) {
         self.frame_buffer.fill(0);
-        self.depth_buffer.fill(f32::MAX);
+        self.depth_buffer.fill(f32::MIN);
     }
 }
 
 // 重心坐标
 pub fn barycentric_2d(p: Vec2, a: Vec2, b: Vec2, c: Vec2) -> (f32, f32, f32) {
-    barycentric_3d(p.extend(0.0), a.extend(0.0), b.extend(0.0), c.extend(0.0))
-}
-pub fn barycentric_3d(p: Vec3, a: Vec3, b: Vec3, c: Vec3) -> (f32, f32, f32) {
+    let p = p.extend(1.0);
+    let a = a.extend(1.0);
+    let b = b.extend(1.0);
+    let c = c.extend(1.0);
+
     let ab = b - a;
     let ac = c - a;
     let ap = p - a;
-    let area_2abc = ab.cross(ac).length();
-    let area_2pab = ab.cross(ap).length();
-    let area_2pca = ac.cross(ap).length();
-    let area_2pbc = area_2abc - area_2pab - area_2pca;
-    let alpha = area_2pbc / area_2abc;
-    let beta = area_2pca / area_2abc;
-    let gamma = 1.0 - alpha - beta;
-    (alpha, beta, gamma)
+    let d00 = ab.dot(ab);
+    let d01 = ab.dot(ac);
+    let d11 = ac.dot(ac);
+    let d20 = ap.dot(ab);
+    let d21 = ap.dot(ac);
+    let denom = d00 * d11 - d01 * d01;
+    let v = (d11 * d20 - d01 * d21) / denom;
+    let w = (d00 * d21 - d01 * d20) / denom;
+    let u = 1.0 - v - w;
+    (u, v, w)
 }
 
 // Cohen-Sutherland线段裁剪算法
@@ -414,4 +488,25 @@ pub fn line_clip(
             out_code1 = compute_out_code(&p1, &rect_min, &rect_max);
         }
     }
+}
+
+// 三角形包围盒
+pub fn bounding_box2d(points: &[Vec2]) -> Aabb2d {
+    let mut min = Vec2::new(f32::MAX, f32::MAX);
+    let mut max = Vec2::new(f32::MIN, f32::MIN);
+    for p in points {
+        if p.x < min.x {
+            min.x = p.x;
+        }
+        if p.y < min.y {
+            min.y = p.y;
+        }
+        if p.x > max.x {
+            max.x = p.x;
+        }
+        if p.y > max.y {
+            max.y = p.y;
+        }
+    }
+    Aabb2d::new(min, max)
 }

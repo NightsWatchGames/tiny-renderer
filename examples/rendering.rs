@@ -23,11 +23,12 @@ pub fn main() {
         100,
         WINDOW_WIDTH as i32,
         WINDOW_HEIGHT as i32,
-        "wireframe rendering",
+        "rendering",
     );
 
     // let meshes = load_glft("assets/cube/cube.gltf");
     let meshes = vec![custom_cube()];
+    // let meshes = vec![custom_mesh()];
     let mesh_pos = Vec3::new(0.0, 0.0, 0.0);
     let model_transformation = translation_mat4(mesh_pos);
 
@@ -38,13 +39,13 @@ pub fn main() {
         60.0f32.to_radians(),
         // Vec3::ZERO
         Vec3::new(3.0, 4.0, 5.0),
-        // Vec3::new(5.0, 8.0, 0.0),
     );
     camera.look_at(mesh_pos, Vec3::Y);
 
     let viewport = Viewport::new(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
     let settings = RendererSettings {
-        wireframe: true,
+        wireframe: false,
+        fill: true,
         ..Default::default()
     };
     let mut renderer = Renderer::new(camera, viewport, settings);

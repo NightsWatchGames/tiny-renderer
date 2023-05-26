@@ -1,4 +1,8 @@
-use crate::math::{Vec2, Vec3, Vec4};
+use crate::{
+    math::{Vec2, Vec3, Vec4},
+    renderer::Color,
+    util::rand_color,
+};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Vertex {
@@ -9,7 +13,7 @@ pub struct Vertex {
     // 纹理坐标
     pub texcoord: Vec2,
     // 顶点颜色
-    pub color: Vec4,
+    pub color: Color,
 }
 #[derive(Clone, Debug)]
 pub struct Mesh {
@@ -42,9 +46,7 @@ pub fn load_glft(path: &str) -> Vec<Mesh> {
                     // TODO
                     mesh.vertices.push(Vertex {
                         position: vertex_position.into(),
-                        normal: Vec3::ZERO,
-                        texcoord: Vec2::ZERO,
-                        color: Vec4::ZERO,
+                        ..Default::default()
                     });
                 }
             }
@@ -60,53 +62,65 @@ pub fn custom_mesh() -> Mesh {
             // 三角形1
             Vertex {
                 position: Vec3::new(1.0, 0.0, 0.0),
+                color: Color::RED,
                 ..Default::default()
             },
             Vertex {
                 position: Vec3::new(-1.0, 0.0, 0.0),
+                color: Color::RED,
                 ..Default::default()
             },
             Vertex {
                 position: Vec3::new(0.0, 1.0, 0.0),
+                color: Color::RED,
                 ..Default::default()
             },
             // 三角形2
             Vertex {
                 position: Vec3::new(1.0, 0.0, 0.0),
+                color: Color::BLUE,
                 ..Default::default()
             },
             Vertex {
                 position: Vec3::new(-1.0, 0.0, 0.0),
+                color: Color::BLUE,
                 ..Default::default()
             },
             Vertex {
                 position: Vec3::new(0.0, 0.0, -1.0),
+                color: Color::BLUE,
                 ..Default::default()
             },
             // 三角形3
             Vertex {
                 position: Vec3::new(1.0, 0.0, 0.0),
+                color: Color::GREEN,
                 ..Default::default()
             },
             Vertex {
                 position: Vec3::new(0.0, 1.0, 0.0),
+                color: Color::GREEN,
                 ..Default::default()
             },
             Vertex {
                 position: Vec3::new(0.0, 0.0, -1.0),
+                color: Color::GREEN,
                 ..Default::default()
             },
             // 三角形4
             Vertex {
                 position: Vec3::new(-1.0, 0.0, 0.0),
+                color: Color::WHITE,
                 ..Default::default()
             },
             Vertex {
                 position: Vec3::new(0.0, 1.0, 0.0),
+                color: Color::WHITE,
                 ..Default::default()
             },
             Vertex {
                 position: Vec3::new(0.0, 0.0, -1.0),
+                color: Color::WHITE,
                 ..Default::default()
             },
         ],
@@ -151,14 +165,17 @@ pub fn build_trangle(p0: Vec3, p1: Vec3, p2: Vec3) -> Vec<Vertex> {
     vec![
         Vertex {
             position: p0,
+            color: rand_color(),
             ..Default::default()
         },
         Vertex {
             position: p1,
+            color: rand_color(),
             ..Default::default()
         },
         Vertex {
             position: p2,
+            color: rand_color(),
             ..Default::default()
         },
     ]

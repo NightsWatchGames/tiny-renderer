@@ -7,7 +7,7 @@
 - [ ] 背面剔除
 - [ ] 视椎剔除
 - [ ] 齐次空间裁剪
-- [ ] 深度测试
+- [x] 深度测试
 - [ ] Blinn–Phong着色模型
 - [x] 重心坐标插值
 
@@ -16,14 +16,15 @@
 ```
 cargo run --example bresenham_line
 ```
-2. 线框渲染
+2. 渲染
 ```
-cargo run --example wireframe_rendering
+cargo run --example rendering
 ```
 
 ## 截图
 ![bresenham_line](./screenshots/bresenham_line.png)
 ![wireframe_rendering](./screenshots/wireframe_rendering.png)
+![color_filling](./screenshots/color_filling.png)
 
 ## 参考
 - [ssloy/tinyrenderer](https://github.com/ssloy/tinyrenderer) and [wiki](https://github.com/ssloy/tinyrenderer/wiki)

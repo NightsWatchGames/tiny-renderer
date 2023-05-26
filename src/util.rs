@@ -1,3 +1,7 @@
+use rand::Rng;
+
+use crate::renderer::Color;
+
 pub fn flip_vertically(frame_buffer: &Vec<u8>, width: usize, height: usize) -> Vec<u8> {
     let mut flipped_frame_buffer = frame_buffer.clone();
     for y in 0..height / 2 {
@@ -10,4 +14,13 @@ pub fn flip_vertically(frame_buffer: &Vec<u8>, width: usize, height: usize) -> V
         }
     }
     flipped_frame_buffer
+}
+
+pub fn rand_color() -> Color {
+    let mut rng = rand::thread_rng();
+    Color::new(
+        rng.gen_range(0..=255),
+        rng.gen_range(0..=255),
+        rng.gen_range(0..=255),
+    )
 }
