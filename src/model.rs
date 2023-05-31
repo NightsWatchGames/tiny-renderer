@@ -1,6 +1,8 @@
+use gltf::mesh::util::{ReadColors, ReadTexCoords};
+
 use crate::{
+    color::Color,
     math::{Vec2, Vec3, Vec4},
-    renderer::Color,
     util::rand_color,
 };
 
@@ -9,11 +11,11 @@ pub struct Vertex {
     // 位置坐标
     pub position: Vec3,
     // 法线向量
-    pub normal: Vec3,
+    pub normal: Option<Vec3>,
     // 纹理坐标
-    pub texcoord: Vec2,
+    pub texcoord: Option<Vec2>,
     // 顶点颜色
-    pub color: Color,
+    pub color: Option<Color>,
 }
 #[derive(Clone, Debug)]
 pub struct Mesh {
@@ -39,16 +41,51 @@ pub fn load_glft(path: &str) -> Vec<Mesh> {
                 panic!("Only Triangles mode is supported");
             }
             let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
-            if let Some(iter) = reader.read_positions() {
-                println!("Positions len: {}", iter.len());
-                for vertex_position in iter {
-                    // println!("{:?}", vertex_position);
-                    // TODO
-                    mesh.vertices.push(Vertex {
-                        position: vertex_position.into(),
-                        ..Default::default()
-                    });
+
+            let mut positions: Vec<[f32; 3]> = Vec::new();
+            let mut normals: Vec<[f32; 3]> = Vec::new();
+            let mut colors: Vec<[u8; 3]> = Vec::new();
+            let mut texcoords: Vec<[f32; 2]> = Vec::new();
+
+            for (semantic, _) in primitive.attributes() {
+                match semantic {
+                    gltf::Semantic::Positions => {
+                        positions = reader.read_positions().unwrap().collect();
+                    }
+                    gltf::Semantic::Normals => {
+                        normals = reader.read_normals().unwrap().collect();
+                    }
+                    gltf::Semantic::Colors(set) => {
+                        colors = reader.read_colors(set).unwrap().into_rgb_u8().collect();
+                    }
+                    gltf::Semantic::TexCoords(set) => {
+                        texcoords = reader.read_tex_coords(set).unwrap().into_f32().collect();
+                    }
+                    _ => {}
                 }
+            }
+
+            let Some(indices) =  reader.read_indices() else {
+                continue;
+            };
+            let indices = indices.into_u32();
+
+            for index in indices {
+                let vertex_position: Vec3 = positions.get(index as usize).unwrap().clone().into();
+                let vertex_normal: Option<Vec3> =
+                    normals.get(index as usize).map(|v| v.clone().into());
+                let vertex_texcoord: Option<Vec2> =
+                    texcoords.get(index as usize).map(|v| v.clone().into());
+                let vertex_color: Option<Color> =
+                    colors.get(index as usize).map(|v| v.clone().into());
+
+                // println!("{:?}", vertex_position);
+                mesh.vertices.push(Vertex {
+                    position: vertex_position,
+                    normal: vertex_normal,
+                    texcoord: vertex_texcoord,
+                    color: vertex_color,
+                });
             }
         }
         meshes.push(mesh);
@@ -62,65 +99,65 @@ pub fn custom_mesh() -> Mesh {
             // 三角形1
             Vertex {
                 position: Vec3::new(1.0, 0.0, 0.0),
-                color: Color::RED,
+                color: Some(Color::RED),
                 ..Default::default()
             },
             Vertex {
                 position: Vec3::new(-1.0, 0.0, 0.0),
-                color: Color::RED,
+                color: Some(Color::RED),
                 ..Default::default()
             },
             Vertex {
                 position: Vec3::new(0.0, 1.0, 0.0),
-                color: Color::RED,
+                color: Some(Color::RED),
                 ..Default::default()
             },
             // 三角形2
             Vertex {
                 position: Vec3::new(1.0, 0.0, 0.0),
-                color: Color::BLUE,
+                color: Some(Color::BLUE),
                 ..Default::default()
             },
             Vertex {
                 position: Vec3::new(-1.0, 0.0, 0.0),
-                color: Color::BLUE,
+                color: Some(Color::BLUE),
                 ..Default::default()
             },
             Vertex {
                 position: Vec3::new(0.0, 0.0, -1.0),
-                color: Color::BLUE,
+                color: Some(Color::BLUE),
                 ..Default::default()
             },
             // 三角形3
             Vertex {
                 position: Vec3::new(1.0, 0.0, 0.0),
-                color: Color::GREEN,
+                color: Some(Color::GREEN),
                 ..Default::default()
             },
             Vertex {
                 position: Vec3::new(0.0, 1.0, 0.0),
-                color: Color::GREEN,
+                color: Some(Color::GREEN),
                 ..Default::default()
             },
             Vertex {
                 position: Vec3::new(0.0, 0.0, -1.0),
-                color: Color::GREEN,
+                color: Some(Color::GREEN),
                 ..Default::default()
             },
             // 三角形4
             Vertex {
                 position: Vec3::new(-1.0, 0.0, 0.0),
-                color: Color::WHITE,
+                color: Some(Color::WHITE),
                 ..Default::default()
             },
             Vertex {
                 position: Vec3::new(0.0, 1.0, 0.0),
-                color: Color::WHITE,
+                color: Some(Color::WHITE),
                 ..Default::default()
             },
             Vertex {
                 position: Vec3::new(0.0, 0.0, -1.0),
-                color: Color::WHITE,
+                color: Some(Color::WHITE),
                 ..Default::default()
             },
         ],
@@ -165,17 +202,17 @@ pub fn build_trangle(p0: Vec3, p1: Vec3, p2: Vec3) -> Vec<Vertex> {
     vec![
         Vertex {
             position: p0,
-            color: rand_color(),
+            color: Some(rand_color()),
             ..Default::default()
         },
         Vertex {
             position: p1,
-            color: rand_color(),
+            color: Some(rand_color()),
             ..Default::default()
         },
         Vertex {
             position: p2,
-            color: rand_color(),
+            color: Some(rand_color()),
             ..Default::default()
         },
     ]

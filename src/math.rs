@@ -80,6 +80,11 @@ impl From<(f32, f32)> for Vec2 {
         Vec2::new(v.0, v.1)
     }
 }
+impl From<[f32; 2]> for Vec2 {
+    fn from(v: [f32; 2]) -> Self {
+        Vec2::new(v[0], v[1])
+    }
+}
 
 //// 三维向量
 #[derive(Debug, Clone, Copy, Default)]

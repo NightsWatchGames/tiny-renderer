@@ -7,8 +7,9 @@ use fltk::{
 use rand::Rng;
 use tiny_renderer::{
     camera::Camera,
+    color::Color,
     math::{Vec2, Vec3},
-    renderer::{Color, Renderer, RendererSettings, Viewport},
+    renderer::{Renderer, RendererSettings, Viewport},
     util::flip_vertically,
 };
 

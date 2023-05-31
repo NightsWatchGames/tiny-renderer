@@ -8,7 +8,7 @@ use tiny_renderer::{
     camera::Camera,
     math::Vec3,
     model::{custom_cube, custom_mesh, load_glft},
-    renderer::{Color, Renderer, RendererSettings, Viewport},
+    renderer::{Renderer, RendererSettings, Viewport},
     transform::translation_mat4,
     util::flip_vertically,
 };
@@ -26,8 +26,11 @@ pub fn main() {
         "rendering",
     );
 
-    // let meshes = load_glft("assets/cube/cube.gltf");
-    let meshes = vec![custom_cube()];
+    let meshes = load_glft("assets/cube/cube.gltf");
+    // let meshes = load_glft("assets/monkey/monkey.gltf");
+    // let meshes = load_glft("assets/sphere/sphere.gltf");
+    // let meshes = load_glft("assets/cornell-box.gltf");
+    // let meshes = vec![custom_cube()];
     // let meshes = vec![custom_mesh()];
     let mesh_pos = Vec3::new(0.0, 0.0, 0.0);
     let model_transformation = translation_mat4(mesh_pos);
@@ -44,8 +47,8 @@ pub fn main() {
 
     let viewport = Viewport::new(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
     let settings = RendererSettings {
-        wireframe: false,
-        fill: true,
+        wireframe: true,
+        vertex_color_interp: true,
         ..Default::default()
     };
     let mut renderer = Renderer::new(camera, viewport, settings);

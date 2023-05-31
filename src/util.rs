@@ -1,6 +1,6 @@
 use rand::Rng;
 
-use crate::renderer::Color;
+use crate::color::Color;
 
 pub fn flip_vertically(frame_buffer: &Vec<u8>, width: usize, height: usize) -> Vec<u8> {
     let mut flipped_frame_buffer = frame_buffer.clone();

@@ -2,6 +2,7 @@ use std::ops::{Add, Mul};
 
 use crate::{
     camera::Camera,
+    color::Color,
     math::{Mat4, Vec2, Vec3},
     model::{Mesh, Vertex},
 };
@@ -27,56 +28,13 @@ impl Viewport {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct Color {
-    pub r: u8,
-    pub g: u8,
-    pub b: u8,
-}
-impl Color {
-    pub const BLACK: Self = Self::new(0, 0, 0);
-    pub const RED: Self = Self::new(255, 0, 0);
-    pub const GREEN: Self = Self::new(0, 255, 0);
-    pub const BLUE: Self = Self::new(0, 0, 255);
-    pub const WHITE: Self = Self::new(255, 255, 255);
-
-    pub const fn new(r: u8, g: u8, b: u8) -> Self {
-        Self { r, g, b }
-    }
-}
-impl Default for Color {
-    fn default() -> Self {
-        Self::BLACK
-    }
-}
-impl Add<Color> for Color {
-    type Output = Self;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        Self::new(
-            self.r.saturating_add(rhs.r),
-            self.g.saturating_add(rhs.g),
-            self.b.saturating_add(rhs.b),
-        )
-    }
-}
-impl Mul<f32> for Color {
-    type Output = Self;
-
-    fn mul(self, rhs: f32) -> Self::Output {
-        Self::new(
-            (self.r as f32 * rhs) as u8,
-            (self.g as f32 * rhs) as u8,
-            (self.b as f32 * rhs) as u8,
-        )
-    }
-}
-
 #[derive(Debug, Clone, Copy, Default)]
 pub struct RendererSettings {
     pub projection: Projection,
+    // 是否绘制线框
     pub wireframe: bool,
-    pub fill: bool,
+    // 是否根据顶点颜色插值填充
+    pub vertex_color_interp: bool,
 }
 #[derive(Debug, Clone, Copy, Default)]
 pub enum Projection {
@@ -116,6 +74,7 @@ impl Renderer {
             depth_buffer: vec![std::f32::MIN; pixel_count],
         }
     }
+
     pub fn draw(&mut self, meshes: &Vec<Mesh>, model_transformation: Mat4) {
         for mesh in meshes {
             for i in 0..mesh.vertices.len() / 3 {
@@ -128,6 +87,7 @@ impl Renderer {
             }
         }
     }
+
     pub fn rasterize_trianlge(&mut self, model_transformation: Mat4, mut vertices: [Vertex; 3]) {
         for vertex in vertices.iter() {
             // println!("before model trans, pos: {:?}", vertex.position);
@@ -206,7 +166,7 @@ impl Renderer {
         }
 
         // 填充像素点
-        if self.settings.fill {
+        if self.settings.vertex_color_interp {
             let aabb2d = bounding_box2d(&vertices.map(|v| Vec2::new(v.position.x, v.position.y)));
             for x in aabb2d.min.x as u32..=aabb2d.max.x as u32 {
                 for y in aabb2d.min.y as u32..=aabb2d.max.y as u32 {
@@ -217,19 +177,28 @@ impl Renderer {
                         vertices[1].position.truncate(),
                         vertices[2].position.truncate(),
                     );
+
                     // 判断是否在三角形内
                     if alpha > 0.0 && beta > 0.0 && gamma > 0.0 {
                         let z = alpha * vertices[0].position.z
                             + beta * vertices[1].position.z
                             + gamma * vertices[2].position.z;
                         let index = (y * self.viewport.width + x) as usize;
+
                         // 深度测试
                         if z > self.depth_buffer[index] {
                             self.depth_buffer[index] = z;
-                            let color = vertices[0].color * alpha
-                                + vertices[1].color * beta
-                                + vertices[2].color * gamma;
-                            self.draw_pixel(p, color);
+                            if vertices[0].color.is_some()
+                                && vertices[1].color.is_some()
+                                && vertices[2].color.is_some()
+                            {
+                                let color = vertices[0].color.unwrap() * alpha
+                                    + vertices[1].color.unwrap() * beta
+                                    + vertices[2].color.unwrap() * gamma;
+                                self.draw_pixel(p, color);
+                            } else {
+                                println!("No vertex color found");
+                            }
                         }
                     }
                 }
