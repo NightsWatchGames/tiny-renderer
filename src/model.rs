@@ -1,4 +1,12 @@
-use gltf::mesh::util::{ReadColors, ReadTexCoords};
+use std::primitive;
+
+use gltf::{
+    buffer::Data,
+    image::Format,
+    json::extensions::material,
+    mesh::util::{ReadColors, ReadTexCoords},
+    Document,
+};
 
 use crate::{
     color::Color,
@@ -17,37 +25,97 @@ pub struct Vertex {
     // 顶点颜色
     pub color: Option<Color>,
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Mesh {
-    // 顶点数据（拓扑类型为Triangles）
-    pub vertices: Vec<Vertex>,
+    pub primitives: Vec<Primitive>,
 }
 
-pub fn load_glft(path: &str) -> Vec<Mesh> {
-    let (gltf, buffers, _) = gltf::import(path).unwrap();
-    println!("Meshes len: {}", gltf.meshes().len());
+pub struct Texture {
+    pub id: usize,
+    pub width: u32,
+    pub height: u32,
+    pub format: Format,
+    pub data: Vec<u8>,
+}
 
-    let mut meshes = Vec::new();
+#[derive(Clone, Debug, Default)]
+pub struct Primitive {
+    // 顶点数据（拓扑类型为Triangles）
+    pub vertices: Vec<Vertex>,
+    pub material: Material,
+}
 
-    for gltf_mesh in gltf.meshes() {
-        let mut mesh = Mesh {
-            vertices: Vec::new(),
+#[derive(Clone, Debug, Default)]
+pub struct Material {
+    pub base_color_texture: Option<usize>,
+    pub base_color_factor: Vec4,
+}
+
+pub struct Model {
+    pub meshes: Vec<Mesh>,
+    pub textures: Vec<Texture>,
+}
+
+pub fn load_glft(path: &str) -> Model {
+    let (document, buffers, images) = gltf::import(path).unwrap();
+
+    let textures = load_textures(&document, &images);
+    println!("Textures len: {}", textures.len());
+
+    let meshes = load_meshes(&document, &buffers);
+    Model { meshes, textures }
+}
+
+pub fn load_textures(document: &Document, images: &Vec<gltf::image::Data>) -> Vec<Texture> {
+    let mut textures = Vec::new();
+    for texture in document.textures() {
+        let source = texture.source();
+        let image = images.get(source.index()).unwrap();
+        let texture = Texture {
+            id: texture.index(),
+            width: image.width,
+            height: image.height,
+            format: image.format,
+            data: image.pixels.clone(),
         };
+        println!(
+            "Texture id: {:?}, width: {:?}, height: {:?}, format: {:?}, data len: {:?}",
+            texture.id,
+            texture.width,
+            texture.height,
+            texture.format,
+            texture.data.len()
+        );
+        textures.push(texture);
+    }
+    textures
+}
+
+pub fn load_meshes(document: &Document, buffers: &Vec<Data>) -> Vec<Mesh> {
+    let mut meshes = Vec::new();
+    println!("Meshes len: {}", document.meshes().len());
+
+    for gltf_mesh in document.meshes() {
         println!("Primitives len: {}", gltf_mesh.primitives().len());
 
-        for primitive in gltf_mesh.primitives() {
-            if primitive.mode() != gltf::mesh::Mode::Triangles {
-                println!("Primitive mode: {:?}", primitive.mode());
+        let mut mesh = Mesh::default();
+
+        for gltf_primitive in gltf_mesh.primitives() {
+            let mut primitive = Primitive::default();
+
+            // 顶点数据
+            if gltf_primitive.mode() != gltf::mesh::Mode::Triangles {
+                println!("Primitive mode: {:?}", gltf_primitive.mode());
                 panic!("Only Triangles mode is supported");
             }
-            let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
+            let reader = gltf_primitive.reader(|buffer| Some(&buffers[buffer.index()]));
 
             let mut positions: Vec<[f32; 3]> = Vec::new();
             let mut normals: Vec<[f32; 3]> = Vec::new();
             let mut colors: Vec<[u8; 3]> = Vec::new();
             let mut texcoords: Vec<[f32; 2]> = Vec::new();
 
-            for (semantic, _) in primitive.attributes() {
+            for (semantic, _) in gltf_primitive.attributes() {
                 match semantic {
                     gltf::Semantic::Positions => {
                         positions = reader.read_positions().unwrap().collect();
@@ -80,91 +148,35 @@ pub fn load_glft(path: &str) -> Vec<Mesh> {
                     colors.get(index as usize).map(|v| v.clone().into());
 
                 // println!("{:?}", vertex_position);
-                mesh.vertices.push(Vertex {
+                primitive.vertices.push(Vertex {
                     position: vertex_position,
                     normal: vertex_normal,
                     texcoord: vertex_texcoord,
                     color: vertex_color,
                 });
             }
+
+            // 材质
+            let mut material = Material::default();
+            let gltf_material = gltf_primitive.material();
+            material.base_color_factor = gltf_material
+                .pbr_metallic_roughness()
+                .base_color_factor()
+                .into();
+            material.base_color_texture = gltf_material
+                .pbr_metallic_roughness()
+                .base_color_texture()
+                .map(|t| t.texture().index());
+            primitive.material = material;
+
+            mesh.primitives.push(primitive);
         }
         meshes.push(mesh);
     }
     meshes
 }
 
-pub fn custom_mesh() -> Mesh {
-    Mesh {
-        vertices: vec![
-            // 三角形1
-            Vertex {
-                position: Vec3::new(1.0, 0.0, 0.0),
-                color: Some(Color::RED),
-                ..Default::default()
-            },
-            Vertex {
-                position: Vec3::new(-1.0, 0.0, 0.0),
-                color: Some(Color::RED),
-                ..Default::default()
-            },
-            Vertex {
-                position: Vec3::new(0.0, 1.0, 0.0),
-                color: Some(Color::RED),
-                ..Default::default()
-            },
-            // 三角形2
-            Vertex {
-                position: Vec3::new(1.0, 0.0, 0.0),
-                color: Some(Color::BLUE),
-                ..Default::default()
-            },
-            Vertex {
-                position: Vec3::new(-1.0, 0.0, 0.0),
-                color: Some(Color::BLUE),
-                ..Default::default()
-            },
-            Vertex {
-                position: Vec3::new(0.0, 0.0, -1.0),
-                color: Some(Color::BLUE),
-                ..Default::default()
-            },
-            // 三角形3
-            Vertex {
-                position: Vec3::new(1.0, 0.0, 0.0),
-                color: Some(Color::GREEN),
-                ..Default::default()
-            },
-            Vertex {
-                position: Vec3::new(0.0, 1.0, 0.0),
-                color: Some(Color::GREEN),
-                ..Default::default()
-            },
-            Vertex {
-                position: Vec3::new(0.0, 0.0, -1.0),
-                color: Some(Color::GREEN),
-                ..Default::default()
-            },
-            // 三角形4
-            Vertex {
-                position: Vec3::new(-1.0, 0.0, 0.0),
-                color: Some(Color::WHITE),
-                ..Default::default()
-            },
-            Vertex {
-                position: Vec3::new(0.0, 1.0, 0.0),
-                color: Some(Color::WHITE),
-                ..Default::default()
-            },
-            Vertex {
-                position: Vec3::new(0.0, 0.0, -1.0),
-                color: Some(Color::WHITE),
-                ..Default::default()
-            },
-        ],
-    }
-}
-
-pub fn custom_cube() -> Mesh {
+pub fn custom_cube() -> Model {
     let p0 = Vec3::new(-1.0, 1.0, 1.0);
     let p1 = Vec3::new(1.0, 1.0, 1.0);
     let p2 = Vec3::new(-1.0, -1.0, 1.0);
@@ -195,7 +207,15 @@ pub fn custom_cube() -> Mesh {
     vertices.append(&mut build_trangle(p4, p5, p6));
     vertices.append(&mut build_trangle(p5, p6, p7));
 
-    Mesh { vertices }
+    Model {
+        meshes: vec![Mesh {
+            primitives: vec![Primitive {
+                vertices,
+                ..Default::default()
+            }],
+        }],
+        textures: Vec::new(),
+    }
 }
 
 pub fn build_trangle(p0: Vec3, p1: Vec3, p2: Vec3) -> Vec<Vertex> {

@@ -1,10 +1,9 @@
-use std::ops::{Add, Mul};
-
 use crate::{
     camera::Camera,
     color::Color,
     math::{Mat4, Vec2, Vec3},
-    model::{Mesh, Vertex},
+    model::{Mesh, Model, Vertex},
+    shader::{FragmentShader, VertexShader},
 };
 
 //// 视口
@@ -58,6 +57,8 @@ pub struct Renderer {
     pub camera: Camera,
     pub viewport: Viewport,
     pub settings: RendererSettings,
+    pub vertex_shader: Option<Box<dyn VertexShader>>,
+    pub fragment_shader: Option<Box<dyn FragmentShader>>,
     // 帧缓冲
     pub frame_buffer: Vec<u8>,
     // 深度缓冲
@@ -70,20 +71,24 @@ impl Renderer {
             camera,
             viewport,
             settings,
+            vertex_shader: None,
+            fragment_shader: None,
             frame_buffer: vec![0; pixel_count * 3],
             depth_buffer: vec![std::f32::MIN; pixel_count],
         }
     }
 
-    pub fn draw(&mut self, meshes: &Vec<Mesh>, model_transformation: Mat4) {
-        for mesh in meshes {
-            for i in 0..mesh.vertices.len() / 3 {
-                let vertices = [
-                    mesh.vertices[i * 3],
-                    mesh.vertices[1 + i * 3],
-                    mesh.vertices[2 + i * 3],
-                ];
-                self.rasterize_trianlge(model_transformation, vertices);
+    pub fn draw(&mut self, model: &Model, model_transformation: Mat4) {
+        for mesh in model.meshes.iter() {
+            for primitive in mesh.primitives.iter() {
+                for i in 0..primitive.vertices.len() / 3 {
+                    let vertices = [
+                        primitive.vertices[i * 3],
+                        primitive.vertices[1 + i * 3],
+                        primitive.vertices[2 + i * 3],
+                    ];
+                    self.rasterize_trianlge(model_transformation, vertices);
+                }
             }
         }
     }
@@ -196,8 +201,6 @@ impl Renderer {
                                     + vertices[1].color.unwrap() * beta
                                     + vertices[2].color.unwrap() * gamma;
                                 self.draw_pixel(p, color);
-                            } else {
-                                println!("No vertex color found");
                             }
                         }
                     }

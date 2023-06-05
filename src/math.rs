@@ -295,6 +295,11 @@ impl Mul<f32> for Vec4 {
         }
     }
 }
+impl From<[f32; 4]> for Vec4 {
+    fn from(v: [f32; 4]) -> Self {
+        Vec4::new(v[0], v[1], v[2], v[3])
+    }
+}
 
 //// 2x2按列存储矩阵
 pub struct Mat2 {

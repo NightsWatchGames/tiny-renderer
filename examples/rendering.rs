@@ -7,7 +7,7 @@ use fltk::{
 use tiny_renderer::{
     camera::Camera,
     math::Vec3,
-    model::{custom_cube, custom_mesh, load_glft},
+    model::{custom_cube, load_glft},
     renderer::{Renderer, RendererSettings, Viewport},
     transform::translation_mat4,
     util::flip_vertically,
@@ -26,28 +26,28 @@ pub fn main() {
         "rendering",
     );
 
-    let meshes = load_glft("assets/cube/cube.gltf");
-    // let meshes = load_glft("assets/monkey/monkey.gltf");
-    // let meshes = load_glft("assets/sphere/sphere.gltf");
-    // let meshes = load_glft("assets/cornell-box.gltf");
-    // let meshes = vec![custom_cube()];
-    // let meshes = vec![custom_mesh()];
-    let mesh_pos = Vec3::new(0.0, 0.0, 0.0);
-    let model_transformation = translation_mat4(mesh_pos);
+    // let model = load_glft("assets/cube/cube.gltf");
+    // let model = load_glft("assets/monkey/monkey.gltf");
+    // let model = load_glft("assets/box-textured/BoxTextured.gltf");
+    // let model = load_glft("assets/sphere/sphere.gltf");
+    // let model = load_glft("assets/cornell-box.gltf");
+    let model = custom_cube();
+    let model_pos = Vec3::new(0.0, 0.0, 0.0);
+    let model_transformation = translation_mat4(model_pos);
 
     let mut camera = Camera::new(
-        -5.0,
-        -1000.0,
+        5.0,
+        1000.0,
         WINDOW_WIDTH as f32 / WINDOW_HEIGHT as f32,
         60.0f32.to_radians(),
         // Vec3::ZERO
         Vec3::new(3.0, 4.0, 5.0),
     );
-    camera.look_at(mesh_pos, Vec3::Y);
+    camera.look_at(model_pos, Vec3::Y);
 
     let viewport = Viewport::new(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
     let settings = RendererSettings {
-        wireframe: true,
+        wireframe: false,
         vertex_color_interp: true,
         ..Default::default()
     };
@@ -55,7 +55,7 @@ pub fn main() {
 
     wind.draw(move |_| {
         renderer.clear();
-        renderer.draw(&meshes, model_transformation);
+        renderer.draw(&model, model_transformation);
         fltk::draw::draw_image(
             &flip_vertically(
                 &renderer.frame_buffer,

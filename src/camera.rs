@@ -9,31 +9,33 @@ pub struct Frustum {
     pub fov: f32,
     // 宽高比
     pub aspect: f32,
-    // 近平面
+    // 近平面（距离）
     pub near: f32,
-    // 远平面
+    // 远平面（距离）
     pub far: f32,
 }
 impl Frustum {
     // 透视投影变换矩阵
     #[rustfmt::skip]
     pub fn persp_projection_transformation(&self) -> Mat4 {
+        let near_z = -self.near;
+        let far_z = -self.far;
         let persp_to_ortho = Mat4::from_rows_slice(&[
-            self.near, 0., 0., 0.,
-            0., self.near, 0., 0.,
-            0., 0., self.near + self.far, -self.near * self.far,
+            near_z, 0., 0., 0.,
+            0., near_z, 0., 0.,
+            0., 0., near_z + far_z, -near_z * far_z,
             0., 0., 1., 0.,
         ]);
         let ortho_translation = Mat4::from_rows_slice(&[
             1., 0., 0., 0.,
             0., 1., 0., 0.,
-            0., 0., 1., -(self.near + self.far) / 2.,
+            0., 0., 1., -(near_z + far_z) / 2.,
             0., 0., 0., 1.,
         ]);
         let ortho_scale = Mat4::from_rows_slice(&[
             2. / self.width_near(), 0., 0., 0.,
             0., 2. / self.height_near(), 0., 0.,
-            0., 0., 2. / (self.near - self.far), 0.,
+            0., 0., 2. / (near_z - far_z), 0.,
             0., 0., 0., 1.,
         ]);
         ortho_scale * ortho_translation * persp_to_ortho
@@ -42,17 +44,18 @@ impl Frustum {
     // 正交投影变换矩阵
     #[rustfmt::skip]
     pub fn ortho_projection_transformation(&self) -> Mat4 {
-        println!("width_near: {}, height_near: {}", self.width_near(), self.height_near());
+        let near_z = -self.near;
+        let far_z = -self.far;
         let ortho_translation = Mat4::from_rows_slice(&[
             1., 0., 0., 0.,
             0., 1., 0., 0.,
-            0., 0., 1., -(self.near + self.far) / 2.,
+            0., 0., 1., -(near_z + far_z) / 2.,
             0., 0., 0., 1.,
         ]);
         let ortho_scale = Mat4::from_rows_slice(&[
             2. / self.width_near(), 0., 0., 0.,
             0., 2. / self.height_near(), 0., 0.,
-            0., 0., 2. / (self.near - self.far), 0.,
+            0., 0., 2. / (near_z - far_z), 0.,
             0., 0., 0., 1.,
         ]);
         ortho_scale * ortho_translation
@@ -63,7 +66,7 @@ impl Frustum {
     }
 
     pub fn height_near(&self) -> f32 {
-        2.0 * (self.fov / 2.0).tan() * self.near.abs()
+        2.0 * (self.fov / 2.0).tan() * self.near
     }
 }
 
@@ -75,6 +78,8 @@ pub struct Camera {
 }
 impl Camera {
     pub fn new(near: f32, far: f32, aspect: f32, fov: f32, position: Vec3) -> Self {
+        assert!(near > 0.0);
+        assert!(far > 0.0);
         Self {
             frustum: Frustum {
                 fov,

@@ -3,5 +3,6 @@ pub mod color;
 pub mod math;
 pub mod model;
 pub mod renderer;
+pub mod shader;
 pub mod transform;
 pub mod util;
