@@ -93,8 +93,6 @@ pub fn load_glft(path: &str) -> Model {
     let (document, buffers, images) = gltf::import(path).unwrap();
 
     let textures = load_textures(&document, &images);
-    println!("Textures len: {}", textures.len());
-
     let meshes = load_meshes(&document, &buffers);
 
     Model {
@@ -126,15 +124,15 @@ pub fn load_textures(document: &Document, images: &Vec<gltf::image::Data>) -> Ve
                 wrap_t: sampler.wrap_t(),
             },
         };
-        println!(
-            "Texture id: {:?}, width: {:?}, height: {:?}, format: {:?}, data len: {:?}, sampler: {:?}",
-            texture.id,
-            texture.width,
-            texture.height,
-            texture.format,
-            texture.data.len(),
-            texture.sampler
-        );
+        // println!(
+        //     "Texture id: {:?}, width: {:?}, height: {:?}, format: {:?}, data len: {:?}, sampler: {:?}",
+        //     texture.id,
+        //     texture.width,
+        //     texture.height,
+        //     texture.format,
+        //     texture.data.len(),
+        //     texture.sampler
+        // );
         textures.push(texture);
     }
     textures
@@ -142,10 +140,10 @@ pub fn load_textures(document: &Document, images: &Vec<gltf::image::Data>) -> Ve
 
 pub fn load_meshes(document: &Document, buffers: &Vec<Data>) -> Vec<Mesh> {
     let mut meshes = Vec::new();
-    println!("Meshes len: {}", document.meshes().len());
+    // println!("Meshes len: {}", document.meshes().len());
 
     for gltf_mesh in document.meshes() {
-        println!("Primitives len: {}", gltf_mesh.primitives().len());
+        // println!("Primitives len: {}", gltf_mesh.primitives().len());
 
         let mut mesh = Mesh::default();
 
@@ -197,7 +195,7 @@ pub fn load_meshes(document: &Document, buffers: &Vec<Data>) -> Vec<Mesh> {
                     colors.get(index as usize).map(|v| v.clone().into());
 
                 // println!("{:?}", vertex_texcoord);
-                println!("{:?}", vertex_position);
+                // println!("{:?}", vertex_position);
                 primitive.vertices.push(Vertex {
                     position: vertex_position,
                     normal: vertex_normal,

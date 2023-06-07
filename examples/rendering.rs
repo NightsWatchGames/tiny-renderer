@@ -1,7 +1,8 @@
 use fltk::{
-    app::set_visual,
-    enums::Mode,
-    prelude::{GroupExt, WidgetBase, WidgetExt},
+    app::{event_key_down, set_visual},
+    enums::{Key, Mode},
+    prelude::{DisplayExt, GroupExt, WidgetBase, WidgetExt},
+    text,
     window::Window,
 };
 use tiny_renderer::{
@@ -18,6 +19,14 @@ const WINDOW_WIDTH: u32 = 1024;
 const WINDOW_HEIGHT: u32 = 720;
 
 pub fn main() {
+    println!(
+        "
+        F1: toggle wireframe rendering
+        F2: toggle vertex color interpolation
+        F3: toggle fragment shading
+        F4: toggle projection
+    "
+    );
     let app = fltk::app::App::default();
     let mut wind = Window::new(
         100,
@@ -29,10 +38,10 @@ pub fn main() {
 
     // let model = load_glft("assets/cube/cube.gltf");
     // let model = load_glft("assets/monkey/monkey.gltf");
-    // let model = load_glft("assets/box-textured/BoxTextured.gltf");
+    let model = load_glft("assets/box-textured/BoxTextured.gltf");
     // let model = load_glft("assets/sphere/sphere.gltf");
     // let model = load_glft("assets/cornell-box.gltf");
-    let model = custom_cube();
+    // let model = custom_cube();
     let model_pos = Vec3::new(0.0, 0.0, 0.0);
     let model_transformation = translation_mat4(model_pos);
 
@@ -63,6 +72,26 @@ pub fn main() {
     }));
 
     wind.draw(move |_| {
+        if event_key_down(Key::F1) {
+            renderer.settings.wireframe = !renderer.settings.wireframe;
+        }
+        if event_key_down(Key::F2) {
+            renderer.settings.vertex_color_interp = !renderer.settings.vertex_color_interp;
+        }
+        if event_key_down(Key::F3) {
+            renderer.settings.fragment_shading = !renderer.settings.fragment_shading;
+        }
+        if event_key_down(Key::F4) {
+            renderer.settings.projection = match renderer.settings.projection {
+                tiny_renderer::renderer::Projection::Perspective => {
+                    tiny_renderer::renderer::Projection::Orthographic
+                }
+                tiny_renderer::renderer::Projection::Orthographic => {
+                    tiny_renderer::renderer::Projection::Perspective
+                }
+            };
+        }
+
         renderer.clear();
         renderer.draw(&model, model_transformation);
         fltk::draw::draw_image(
@@ -83,5 +112,10 @@ pub fn main() {
     wind.end();
     set_visual(Mode::Rgb).unwrap();
     wind.show();
+
+    fltk::app::add_idle3(move |_| {
+        wind.redraw();
+    });
+
     app.run().unwrap();
 }

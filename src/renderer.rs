@@ -201,7 +201,7 @@ impl Renderer {
             // println!("after proj trans, pos: {:?}", vertex.position);
             assert!(vertex.position.x.abs() <= 1.0);
             assert!(vertex.position.y.abs() <= 1.0);
-            println!("after proj trans, pos.z: {:?}", vertex.position.z);
+            // println!("after proj trans, pos.z: {:?}", vertex.position.z);
             // FIXME 存在问题，asset失败
             // assert!(vertex.position.z.abs() <= 1.0);
         }

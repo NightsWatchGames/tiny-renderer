@@ -111,4 +111,15 @@ impl Camera {
         // 先平移再旋转
         rotation_mat4 * translation_mat4
     }
+
+    pub fn rotate(&mut self, rotation: Quat) {
+        self.rotation = rotation * self.rotation;
+    }
+    pub fn translate_around(&mut self, point: Vec3, rotation: Quat) {
+        self.position = point + rotation * (self.position - point);
+    }
+    pub fn rotate_around(&mut self, point: Vec3, rotation: Quat) {
+        self.translate_around(point, rotation);
+        self.rotate(rotation);
+    }
 }
