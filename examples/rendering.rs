@@ -8,7 +8,7 @@ use fltk::{
 use tiny_renderer::{
     camera::Camera,
     color::Color,
-    math::Vec3,
+    math::{Quat, Vec3},
     model::{load_glft, Model},
     renderer::{Renderer, RendererSettings, Viewport},
     transform::translation_mat4,
@@ -25,6 +25,7 @@ pub fn main() {
         F2: toggle vertex color interpolation
         F3: toggle fragment shading
         F4: toggle projection
+        W/A/S/D/Q/E: move camera
     "
     );
     let app = fltk::app::App::default();
@@ -90,6 +91,36 @@ pub fn main() {
                     tiny_renderer::renderer::Projection::Perspective
                 }
             };
+        }
+        if event_key_down(Key::from_char('A')) {
+            renderer
+                .camera
+                .rotate_around(model_pos, Quat::from_axis_angle(Vec3::Y, -0.1))
+        }
+        if event_key_down(Key::from_char('D')) {
+            renderer
+                .camera
+                .rotate_around(model_pos, Quat::from_axis_angle(Vec3::Y, 0.1))
+        }
+        if event_key_down(Key::from_char('W')) {
+            renderer
+                .camera
+                .rotate_around(model_pos, Quat::from_axis_angle(Vec3::X, 0.1))
+        }
+        if event_key_down(Key::from_char('S')) {
+            renderer
+                .camera
+                .rotate_around(model_pos, Quat::from_axis_angle(Vec3::X, -0.1))
+        }
+        if event_key_down(Key::from_char('Q')) {
+            renderer
+                .camera
+                .rotate_around(model_pos, Quat::from_axis_angle(Vec3::Z, 0.1))
+        }
+        if event_key_down(Key::from_char('E')) {
+            renderer
+                .camera
+                .rotate_around(model_pos, Quat::from_axis_angle(Vec3::Z, -0.1))
         }
 
         renderer.clear();
