@@ -1,8 +1,8 @@
-use crate::{color::Color, model::Vertex};
+use crate::{
+    color::Color,
+    math::Vec2,
+    model::{Model, Vertex},
+};
 
-pub trait VertexShader {
-    fn shade(&self, vertex: Vertex) -> Vertex;
-}
-pub trait FragmentShader {
-    fn shade(&self) -> Color;
-}
+pub type VertexShader = Box<dyn Fn(&mut Vertex)>;
+pub type FragmentShader = Box<dyn Fn(&Model, Vec2) -> Color>;

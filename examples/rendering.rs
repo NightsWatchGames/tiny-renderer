@@ -6,11 +6,12 @@ use fltk::{
 };
 use tiny_renderer::{
     camera::Camera,
+    color::Color,
     math::Vec3,
-    model::{custom_cube, load_glft},
+    model::{load_glft, Model},
     renderer::{Renderer, RendererSettings, Viewport},
     transform::translation_mat4,
-    util::flip_vertically,
+    util::{custom_cube, flip_vertically, rand_color},
 };
 
 const WINDOW_WIDTH: u32 = 1024;
@@ -28,10 +29,10 @@ pub fn main() {
 
     // let model = load_glft("assets/cube/cube.gltf");
     // let model = load_glft("assets/monkey/monkey.gltf");
-    // let model = load_glft("assets/box-textured/BoxTextured.gltf");
+    let model = load_glft("assets/box-textured/BoxTextured.gltf");
     // let model = load_glft("assets/sphere/sphere.gltf");
     // let model = load_glft("assets/cornell-box.gltf");
-    let model = custom_cube();
+    // let model = custom_cube();
     let model_pos = Vec3::new(0.0, 0.0, 0.0);
     let model_transformation = translation_mat4(model_pos);
 
@@ -41,17 +42,25 @@ pub fn main() {
         WINDOW_WIDTH as f32 / WINDOW_HEIGHT as f32,
         60.0f32.to_radians(),
         // Vec3::ZERO
-        Vec3::new(3.0, 4.0, 5.0),
+        // Vec3::new(3.0, 4.0, 5.0),
+        Vec3::new(2.0, 3.0, 4.0),
     );
     camera.look_at(model_pos, Vec3::Y);
 
     let viewport = Viewport::new(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
     let settings = RendererSettings {
         wireframe: false,
-        vertex_color_interp: true,
+        vertex_color_interp: false,
+        fragment_shading: true,
         ..Default::default()
     };
     let mut renderer = Renderer::new(camera, viewport, settings);
+    renderer.fragment_shader = Some(Box::new(|model, texcoord| {
+        if let Some(texture) = model.texture_id_map.get(&0) {
+            return texture.sample(texcoord);
+        }
+        Color::GREEN
+    }));
 
     wind.draw(move |_| {
         renderer.clear();

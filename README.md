@@ -8,6 +8,7 @@
 - [ ] 视椎剔除
 - [ ] 齐次空间裁剪
 - [x] 深度测试
+- [x] 纹理映射
 - [ ] Blinn–Phong着色模型
 - [x] 重心坐标插值
 - [ ] 相机控制
@@ -25,7 +26,8 @@ cargo run --example rendering
 ## 截图
 ![bresenham_line](./screenshots/bresenham_line.png)
 ![wireframe_rendering](./screenshots/wireframe_rendering.png)
-![color_filling](./screenshots/color_filling.png)
+![vertex_color_interpolation](./screenshots/vertex_color_interpolation.png)
+![texture_mapping](./screenshots/texture_mapping.png)
 
 ## 参考
 - [ssloy/tinyrenderer](https://github.com/ssloy/tinyrenderer) and [wiki](https://github.com/ssloy/tinyrenderer/wiki)

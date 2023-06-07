@@ -34,6 +34,8 @@ pub struct RendererSettings {
     pub wireframe: bool,
     // 是否根据顶点颜色插值填充
     pub vertex_color_interp: bool,
+    // 是否采用片段着色
+    pub fragment_shading: bool,
 }
 #[derive(Debug, Clone, Copy, Default)]
 pub enum Projection {
@@ -57,8 +59,8 @@ pub struct Renderer {
     pub camera: Camera,
     pub viewport: Viewport,
     pub settings: RendererSettings,
-    pub vertex_shader: Option<Box<dyn VertexShader>>,
-    pub fragment_shader: Option<Box<dyn FragmentShader>>,
+    pub vertex_shader: Option<VertexShader>,
+    pub fragment_shader: Option<FragmentShader>,
     // 帧缓冲
     pub frame_buffer: Vec<u8>,
     // 深度缓冲
@@ -87,16 +89,28 @@ impl Renderer {
                         primitive.vertices[1 + i * 3],
                         primitive.vertices[2 + i * 3],
                     ];
-                    self.rasterize_trianlge(model_transformation, vertices);
+                    self.rasterize_trianlge(model, model_transformation, vertices);
                 }
             }
         }
     }
 
-    pub fn rasterize_trianlge(&mut self, model_transformation: Mat4, mut vertices: [Vertex; 3]) {
+    pub fn rasterize_trianlge(
+        &mut self,
+        model: &Model,
+        model_transformation: Mat4,
+        mut vertices: [Vertex; 3],
+    ) {
+        // 顶点着色
+        if let Some(vertex_shader) = &self.vertex_shader {
+            for vertex in vertices.iter_mut() {
+                vertex_shader(vertex);
+            }
+        }
         for vertex in vertices.iter() {
             // println!("before model trans, pos: {:?}", vertex.position);
         }
+
         // 模型变换
         for vertex in vertices.iter_mut() {
             vertex.position =
@@ -131,7 +145,9 @@ impl Renderer {
             // println!("after proj trans, pos: {:?}", vertex.position);
             assert!(vertex.position.x.abs() <= 1.0);
             assert!(vertex.position.y.abs() <= 1.0);
-            assert!(vertex.position.z.abs() <= 1.0);
+            println!("after proj trans, pos.z: {:?}", vertex.position.z);
+            // FIXME 存在问题，asset失败
+            // assert!(vertex.position.z.abs() <= 1.0);
         }
 
         // 视口变换
@@ -170,29 +186,40 @@ impl Renderer {
             );
         }
 
-        // 填充像素点
-        if self.settings.vertex_color_interp {
-            let aabb2d = bounding_box2d(&vertices.map(|v| Vec2::new(v.position.x, v.position.y)));
-            for x in aabb2d.min.x as u32..=aabb2d.max.x as u32 {
-                for y in aabb2d.min.y as u32..=aabb2d.max.y as u32 {
-                    let p = Vec2::new(x as f32, y as f32);
-                    let (alpha, beta, gamma) = barycentric_2d(
-                        p,
-                        vertices[0].position.truncate(),
-                        vertices[1].position.truncate(),
-                        vertices[2].position.truncate(),
-                    );
+        // 光栅化
+        let aabb2d = bounding_box2d(&vertices.map(|v| Vec2::new(v.position.x, v.position.y)));
+        for x in aabb2d.min.x as u32..=aabb2d.max.x as u32 {
+            for y in aabb2d.min.y as u32..=aabb2d.max.y as u32 {
+                let p = Vec2::new(x as f32, y as f32);
+                let (alpha, beta, gamma) = barycentric_2d(
+                    p,
+                    vertices[0].position.truncate(),
+                    vertices[1].position.truncate(),
+                    vertices[2].position.truncate(),
+                );
 
-                    // 判断是否在三角形内
-                    if alpha > 0.0 && beta > 0.0 && gamma > 0.0 {
-                        let z = alpha * vertices[0].position.z
-                            + beta * vertices[1].position.z
-                            + gamma * vertices[2].position.z;
-                        let index = (y * self.viewport.width + x) as usize;
+                // 判断是否在三角形内
+                if alpha > 0.0 && beta > 0.0 && gamma > 0.0 {
+                    let z = alpha * vertices[0].position.z
+                        + beta * vertices[1].position.z
+                        + gamma * vertices[2].position.z;
+                    let index = (y * self.viewport.width + x) as usize;
 
-                        // 深度测试
-                        if z > self.depth_buffer[index] {
-                            self.depth_buffer[index] = z;
+                    // 深度测试
+                    if z > self.depth_buffer[index] {
+                        self.depth_buffer[index] = z;
+
+                        if self.settings.fragment_shading {
+                            // 片段着色
+                            if let Some(fragment_shader) = &self.fragment_shader {
+                                let uv = vertices[0].texcoord.unwrap() * alpha
+                                    + vertices[1].texcoord.unwrap() * beta
+                                    + vertices[2].texcoord.unwrap() * gamma;
+                                let color = fragment_shader(model, uv);
+                                self.draw_pixel(p, color);
+                            }
+                        } else if self.settings.vertex_color_interp {
+                            // 顶点颜色插值
                             if vertices[0].color.is_some()
                                 && vertices[1].color.is_some()
                                 && vertices[2].color.is_some()

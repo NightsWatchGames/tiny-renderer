@@ -1,6 +1,12 @@
+use std::collections::HashMap;
+
 use rand::Rng;
 
-use crate::color::Color;
+use crate::{
+    color::Color,
+    math::Vec3,
+    model::{Mesh, Model, Primitive, Vertex},
+};
 
 pub fn flip_vertically(frame_buffer: &Vec<u8>, width: usize, height: usize) -> Vec<u8> {
     let mut flipped_frame_buffer = frame_buffer.clone();
@@ -23,4 +29,66 @@ pub fn rand_color() -> Color {
         rng.gen_range(0..=255),
         rng.gen_range(0..=255),
     )
+}
+
+pub fn custom_cube() -> Model {
+    let p0 = Vec3::new(-1.0, 1.0, 1.0);
+    let p1 = Vec3::new(1.0, 1.0, 1.0);
+    let p2 = Vec3::new(-1.0, -1.0, 1.0);
+    let p3 = Vec3::new(1.0, -1.0, 1.0);
+
+    let p4 = Vec3::new(-1.0, 1.0, -1.0);
+    let p5 = Vec3::new(1.0, 1.0, -1.0);
+    let p6 = Vec3::new(-1.0, -1.0, -1.0);
+    let p7 = Vec3::new(1.0, -1.0, -1.0);
+
+    let mut vertices = Vec::new();
+
+    vertices.append(&mut build_trangle(p0, p1, p2));
+    vertices.append(&mut build_trangle(p1, p2, p3));
+
+    vertices.append(&mut build_trangle(p0, p1, p4));
+    vertices.append(&mut build_trangle(p1, p4, p5));
+
+    vertices.append(&mut build_trangle(p0, p2, p4));
+    vertices.append(&mut build_trangle(p2, p4, p6));
+
+    vertices.append(&mut build_trangle(p1, p3, p5));
+    vertices.append(&mut build_trangle(p3, p5, p7));
+
+    vertices.append(&mut build_trangle(p2, p3, p6));
+    vertices.append(&mut build_trangle(p3, p6, p7));
+
+    vertices.append(&mut build_trangle(p4, p5, p6));
+    vertices.append(&mut build_trangle(p5, p6, p7));
+
+    Model {
+        meshes: vec![Mesh {
+            primitives: vec![Primitive {
+                vertices,
+                ..Default::default()
+            }],
+        }],
+        texture_id_map: HashMap::new(),
+    }
+}
+
+pub fn build_trangle(p0: Vec3, p1: Vec3, p2: Vec3) -> Vec<Vertex> {
+    vec![
+        Vertex {
+            position: p0,
+            color: Some(rand_color()),
+            ..Default::default()
+        },
+        Vertex {
+            position: p1,
+            color: Some(rand_color()),
+            ..Default::default()
+        },
+        Vertex {
+            position: p2,
+            color: Some(rand_color()),
+            ..Default::default()
+        },
+    ]
 }

@@ -1,12 +1,12 @@
-use std::primitive;
-
 use gltf::{
     buffer::Data,
     image::Format,
-    json::extensions::material,
+    json::validation::Checked,
     mesh::util::{ReadColors, ReadTexCoords},
+    texture::{MagFilter, MinFilter, WrappingMode},
     Document,
 };
+use std::collections::HashMap;
 
 use crate::{
     color::Color,
@@ -30,12 +30,45 @@ pub struct Mesh {
     pub primitives: Vec<Primitive>,
 }
 
+#[derive(Clone, Debug)]
+pub struct Sampler {
+    pub mag_filter: Option<MagFilter>,
+    pub min_filter: Option<MinFilter>,
+    pub wrap_s: WrappingMode,
+    pub wrap_t: WrappingMode,
+}
+
 pub struct Texture {
     pub id: usize,
     pub width: u32,
     pub height: u32,
     pub format: Format,
     pub data: Vec<u8>,
+    pub sampler: Sampler,
+}
+impl Texture {
+    pub fn sample(&self, mut texcoord: Vec2) -> Color {
+        if self.sampler.wrap_s != WrappingMode::Repeat
+            || self.sampler.wrap_t != WrappingMode::Repeat
+        {
+            panic!("Unsupported texture wrap mode: {:?}", self.sampler.wrap_s)
+        }
+        if texcoord.x > 1.0 {
+            texcoord.x -= texcoord.x.floor();
+        }
+        if texcoord.y > 1.0 {
+            texcoord.y -= texcoord.y.floor();
+        }
+        let x = (texcoord.x * (self.width - 1) as f32) as usize;
+        let y = (texcoord.y * (self.height - 1) as f32) as usize;
+
+        if self.format != Format::R8G8B8 {
+            panic!("Unsupported texture format: {:?}", self.format);
+        }
+        // 一个颜色占 3 个字节
+        let index = (y * self.width as usize + x) * 3;
+        Color::new(self.data[index], self.data[index + 1], self.data[index + 2])
+    }
 }
 
 #[derive(Clone, Debug, Default)]
@@ -53,7 +86,7 @@ pub struct Material {
 
 pub struct Model {
     pub meshes: Vec<Mesh>,
-    pub textures: Vec<Texture>,
+    pub texture_id_map: HashMap<usize, Texture>,
 }
 
 pub fn load_glft(path: &str) -> Model {
@@ -63,28 +96,44 @@ pub fn load_glft(path: &str) -> Model {
     println!("Textures len: {}", textures.len());
 
     let meshes = load_meshes(&document, &buffers);
-    Model { meshes, textures }
+
+    Model {
+        meshes,
+        texture_id_map: textures
+            .into_iter()
+            .map(|texture| (texture.id, texture))
+            .collect(),
+    }
 }
 
 pub fn load_textures(document: &Document, images: &Vec<gltf::image::Data>) -> Vec<Texture> {
     let mut textures = Vec::new();
     for texture in document.textures() {
         let source = texture.source();
+        let sampler = texture.sampler();
         let image = images.get(source.index()).unwrap();
+
         let texture = Texture {
             id: texture.index(),
             width: image.width,
             height: image.height,
             format: image.format,
             data: image.pixels.clone(),
+            sampler: Sampler {
+                mag_filter: sampler.mag_filter(),
+                min_filter: sampler.min_filter(),
+                wrap_s: sampler.wrap_s(),
+                wrap_t: sampler.wrap_t(),
+            },
         };
         println!(
-            "Texture id: {:?}, width: {:?}, height: {:?}, format: {:?}, data len: {:?}",
+            "Texture id: {:?}, width: {:?}, height: {:?}, format: {:?}, data len: {:?}, sampler: {:?}",
             texture.id,
             texture.width,
             texture.height,
             texture.format,
-            texture.data.len()
+            texture.data.len(),
+            texture.sampler
         );
         textures.push(texture);
     }
@@ -147,7 +196,8 @@ pub fn load_meshes(document: &Document, buffers: &Vec<Data>) -> Vec<Mesh> {
                 let vertex_color: Option<Color> =
                     colors.get(index as usize).map(|v| v.clone().into());
 
-                // println!("{:?}", vertex_position);
+                // println!("{:?}", vertex_texcoord);
+                println!("{:?}", vertex_position);
                 primitive.vertices.push(Vertex {
                     position: vertex_position,
                     normal: vertex_normal,
@@ -174,66 +224,4 @@ pub fn load_meshes(document: &Document, buffers: &Vec<Data>) -> Vec<Mesh> {
         meshes.push(mesh);
     }
     meshes
-}
-
-pub fn custom_cube() -> Model {
-    let p0 = Vec3::new(-1.0, 1.0, 1.0);
-    let p1 = Vec3::new(1.0, 1.0, 1.0);
-    let p2 = Vec3::new(-1.0, -1.0, 1.0);
-    let p3 = Vec3::new(1.0, -1.0, 1.0);
-
-    let p4 = Vec3::new(-1.0, 1.0, -1.0);
-    let p5 = Vec3::new(1.0, 1.0, -1.0);
-    let p6 = Vec3::new(-1.0, -1.0, -1.0);
-    let p7 = Vec3::new(1.0, -1.0, -1.0);
-
-    let mut vertices = Vec::new();
-
-    vertices.append(&mut build_trangle(p0, p1, p2));
-    vertices.append(&mut build_trangle(p1, p2, p3));
-
-    vertices.append(&mut build_trangle(p0, p1, p4));
-    vertices.append(&mut build_trangle(p1, p4, p5));
-
-    vertices.append(&mut build_trangle(p0, p2, p4));
-    vertices.append(&mut build_trangle(p2, p4, p6));
-
-    vertices.append(&mut build_trangle(p1, p3, p5));
-    vertices.append(&mut build_trangle(p3, p5, p7));
-
-    vertices.append(&mut build_trangle(p2, p3, p6));
-    vertices.append(&mut build_trangle(p3, p6, p7));
-
-    vertices.append(&mut build_trangle(p4, p5, p6));
-    vertices.append(&mut build_trangle(p5, p6, p7));
-
-    Model {
-        meshes: vec![Mesh {
-            primitives: vec![Primitive {
-                vertices,
-                ..Default::default()
-            }],
-        }],
-        textures: Vec::new(),
-    }
-}
-
-pub fn build_trangle(p0: Vec3, p1: Vec3, p2: Vec3) -> Vec<Vertex> {
-    vec![
-        Vertex {
-            position: p0,
-            color: Some(rand_color()),
-            ..Default::default()
-        },
-        Vertex {
-            position: p1,
-            color: Some(rand_color()),
-            ..Default::default()
-        },
-        Vertex {
-            position: p2,
-            color: Some(rand_color()),
-            ..Default::default()
-        },
-    ]
 }
