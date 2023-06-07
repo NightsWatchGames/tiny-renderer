@@ -202,7 +202,8 @@ pub fn load_meshes(document: &Document, buffers: &Vec<Data>) -> Vec<Mesh> {
                     position: vertex_position,
                     normal: vertex_normal,
                     texcoord: vertex_texcoord,
-                    color: vertex_color,
+                    // 如果顶点没有颜色，就随机生成一个
+                    color: vertex_color.or(Some(rand_color())),
                 });
             }
 

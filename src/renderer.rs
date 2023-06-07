@@ -4,6 +4,7 @@ use crate::{
     math::{Mat4, Vec2, Vec3},
     model::{Mesh, Model, Vertex},
     shader::{FragmentShader, VertexShader},
+    transform,
 };
 
 //// 视口
@@ -84,125 +85,62 @@ impl Renderer {
         for mesh in model.meshes.iter() {
             for primitive in mesh.primitives.iter() {
                 for i in 0..primitive.vertices.len() / 3 {
-                    let vertices = [
+                    let mut triangle = [
                         primitive.vertices[i * 3],
                         primitive.vertices[1 + i * 3],
                         primitive.vertices[2 + i * 3],
                     ];
-                    self.rasterize_trianlge(model, model_transformation, vertices);
+                    // 顶点着色
+                    self.vertex_shading(&mut triangle);
+                    // mvp变换
+                    self.apply_mvp_transformations(&mut triangle, model_transformation);
+                    // TODO 视椎体裁剪
+                    // 视口变换
+                    self.apply_viewport_transformation(&mut triangle);
+                    // 光栅化
+                    self.rasterize_trianlge(model, triangle);
                 }
             }
         }
     }
 
-    pub fn rasterize_trianlge(
-        &mut self,
-        model: &Model,
-        model_transformation: Mat4,
-        mut vertices: [Vertex; 3],
-    ) {
-        // 顶点着色
-        if let Some(vertex_shader) = &self.vertex_shader {
-            for vertex in vertices.iter_mut() {
-                vertex_shader(vertex);
-            }
-        }
-        for vertex in vertices.iter() {
-            // println!("before model trans, pos: {:?}", vertex.position);
-        }
-
-        // 模型变换
-        for vertex in vertices.iter_mut() {
-            vertex.position =
-                (model_transformation * vertex.position.extend(1.0)).to_cartesian_point();
-        }
-        for vertex in vertices.iter() {
-            // println!("after model trans, pos: {:?}", vertex.position);
-        }
-
-        // 视图变换
-        let view_transformation = self.camera.view_transformation();
-        for vertex in vertices.iter_mut() {
-            vertex.position =
-                (view_transformation * vertex.position.extend(1.0)).to_cartesian_point();
-        }
-        for vertex in vertices.iter() {
-            // println!("after view trans, pos: {:?}", vertex.position);
-        }
-
-        // TODO 视椎体裁剪
-
-        // 投影变换
-        let projection_transformation = match self.settings.projection {
-            Projection::Perspective => self.camera.frustum.persp_projection_transformation(),
-            Projection::Orthographic => self.camera.frustum.ortho_projection_transformation(),
-        };
-        for vertex in vertices.iter_mut() {
-            vertex.position =
-                (projection_transformation * vertex.position.extend(1.0)).to_cartesian_point();
-        }
-        for vertex in vertices.iter() {
-            // println!("after proj trans, pos: {:?}", vertex.position);
-            assert!(vertex.position.x.abs() <= 1.0);
-            assert!(vertex.position.y.abs() <= 1.0);
-            println!("after proj trans, pos.z: {:?}", vertex.position.z);
-            // FIXME 存在问题，asset失败
-            // assert!(vertex.position.z.abs() <= 1.0);
-        }
-
-        // 视口变换
-        // TODO 矩阵
-        for vertex in vertices.iter_mut() {
-            vertex.position.x = (vertex.position.x + 1.0) * (self.viewport.width as f32 - 1.0)
-                / 2.0
-                + self.viewport.x as f32;
-            vertex.position.y = (vertex.position.y + 1.0) * (self.viewport.height as f32 - 1.0)
-                / 2.0
-                + self.viewport.y as f32;
-        }
-        for vertex in vertices.iter() {
-            // println!(
-            // "draw_line phase, x: {}, y: {}",
-            // vertex.position.x, vertex.position.y
-            // );
-        }
-
+    pub fn rasterize_trianlge(&mut self, model: &Model, triangle: [Vertex; 3]) {
         // 线框渲染
         if self.settings.wireframe {
             self.draw_line(
-                Vec2::new(vertices[0].position.x, vertices[0].position.y),
-                Vec2::new(vertices[1].position.x, vertices[1].position.y),
+                Vec2::new(triangle[0].position.x, triangle[0].position.y),
+                Vec2::new(triangle[1].position.x, triangle[1].position.y),
                 Color::WHITE,
             );
             self.draw_line(
-                Vec2::new(vertices[1].position.x, vertices[1].position.y),
-                Vec2::new(vertices[2].position.x, vertices[2].position.y),
+                Vec2::new(triangle[1].position.x, triangle[1].position.y),
+                Vec2::new(triangle[2].position.x, triangle[2].position.y),
                 Color::WHITE,
             );
             self.draw_line(
-                Vec2::new(vertices[2].position.x, vertices[2].position.y),
-                Vec2::new(vertices[0].position.x, vertices[0].position.y),
+                Vec2::new(triangle[2].position.x, triangle[2].position.y),
+                Vec2::new(triangle[0].position.x, triangle[0].position.y),
                 Color::WHITE,
             );
         }
 
         // 光栅化
-        let aabb2d = bounding_box2d(&vertices.map(|v| Vec2::new(v.position.x, v.position.y)));
+        let aabb2d = bounding_box2d(&triangle.map(|v| Vec2::new(v.position.x, v.position.y)));
         for x in aabb2d.min.x as u32..=aabb2d.max.x as u32 {
             for y in aabb2d.min.y as u32..=aabb2d.max.y as u32 {
                 let p = Vec2::new(x as f32, y as f32);
                 let (alpha, beta, gamma) = barycentric_2d(
                     p,
-                    vertices[0].position.truncate(),
-                    vertices[1].position.truncate(),
-                    vertices[2].position.truncate(),
+                    triangle[0].position.truncate(),
+                    triangle[1].position.truncate(),
+                    triangle[2].position.truncate(),
                 );
 
                 // 判断是否在三角形内
                 if alpha > 0.0 && beta > 0.0 && gamma > 0.0 {
-                    let z = alpha * vertices[0].position.z
-                        + beta * vertices[1].position.z
-                        + gamma * vertices[2].position.z;
+                    let z = alpha * triangle[0].position.z
+                        + beta * triangle[1].position.z
+                        + gamma * triangle[2].position.z;
                     let index = (y * self.viewport.width + x) as usize;
 
                     // 深度测试
@@ -212,27 +150,73 @@ impl Renderer {
                         if self.settings.fragment_shading {
                             // 片段着色
                             if let Some(fragment_shader) = &self.fragment_shader {
-                                let uv = vertices[0].texcoord.unwrap() * alpha
-                                    + vertices[1].texcoord.unwrap() * beta
-                                    + vertices[2].texcoord.unwrap() * gamma;
-                                let color = fragment_shader(model, uv);
+                                let texcoord = triangle[0].texcoord.unwrap() * alpha
+                                    + triangle[1].texcoord.unwrap() * beta
+                                    + triangle[2].texcoord.unwrap() * gamma;
+                                let color = fragment_shader(model, texcoord);
                                 self.draw_pixel(p, color);
                             }
                         } else if self.settings.vertex_color_interp {
                             // 顶点颜色插值
-                            if vertices[0].color.is_some()
-                                && vertices[1].color.is_some()
-                                && vertices[2].color.is_some()
+                            if triangle[0].color.is_some()
+                                && triangle[1].color.is_some()
+                                && triangle[2].color.is_some()
                             {
-                                let color = vertices[0].color.unwrap() * alpha
-                                    + vertices[1].color.unwrap() * beta
-                                    + vertices[2].color.unwrap() * gamma;
+                                let color = triangle[0].color.unwrap() * alpha
+                                    + triangle[1].color.unwrap() * beta
+                                    + triangle[2].color.unwrap() * gamma;
                                 self.draw_pixel(p, color);
                             }
                         }
                     }
                 }
             }
+        }
+    }
+
+    pub fn vertex_shading(&self, vertices: &mut [Vertex]) {
+        if let Some(vertex_shader) = &self.vertex_shader {
+            for vertex in vertices.iter_mut() {
+                vertex_shader(vertex);
+            }
+        }
+    }
+
+    pub fn apply_mvp_transformations(&self, vertices: &mut [Vertex], model_transformation: Mat4) {
+        // 视图变换
+        let view_transformation = self.camera.view_transformation();
+        // 投影变换
+        let projection_transformation = match self.settings.projection {
+            Projection::Perspective => self.camera.frustum.persp_projection_transformation(),
+            Projection::Orthographic => self.camera.frustum.ortho_projection_transformation(),
+        };
+        for vertex in vertices.iter_mut() {
+            vertex.position = (projection_transformation
+                * view_transformation
+                * model_transformation
+                * vertex.position.extend(1.0))
+            .to_cartesian_point();
+        }
+        for vertex in vertices.iter() {
+            // println!("after proj trans, pos: {:?}", vertex.position);
+            assert!(vertex.position.x.abs() <= 1.0);
+            assert!(vertex.position.y.abs() <= 1.0);
+            println!("after proj trans, pos.z: {:?}", vertex.position.z);
+            // FIXME 存在问题，asset失败
+            // assert!(vertex.position.z.abs() <= 1.0);
+        }
+    }
+
+    pub fn apply_viewport_transformation(&self, vertices: &mut [Vertex]) {
+        // 视口变换
+        // TODO 矩阵
+        for vertex in vertices.iter_mut() {
+            vertex.position.x = (vertex.position.x + 1.0) * (self.viewport.width as f32 - 1.0)
+                / 2.0
+                + self.viewport.x as f32;
+            vertex.position.y = (vertex.position.y + 1.0) * (self.viewport.height as f32 - 1.0)
+                / 2.0
+                + self.viewport.y as f32;
         }
     }
 

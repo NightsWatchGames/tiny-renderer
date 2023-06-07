@@ -29,10 +29,10 @@ pub fn main() {
 
     // let model = load_glft("assets/cube/cube.gltf");
     // let model = load_glft("assets/monkey/monkey.gltf");
-    let model = load_glft("assets/box-textured/BoxTextured.gltf");
+    // let model = load_glft("assets/box-textured/BoxTextured.gltf");
     // let model = load_glft("assets/sphere/sphere.gltf");
     // let model = load_glft("assets/cornell-box.gltf");
-    // let model = custom_cube();
+    let model = custom_cube();
     let model_pos = Vec3::new(0.0, 0.0, 0.0);
     let model_transformation = translation_mat4(model_pos);
 
@@ -50,8 +50,8 @@ pub fn main() {
     let viewport = Viewport::new(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
     let settings = RendererSettings {
         wireframe: false,
-        vertex_color_interp: false,
-        fragment_shading: true,
+        vertex_color_interp: true,
+        fragment_shading: false,
         ..Default::default()
     };
     let mut renderer = Renderer::new(camera, viewport, settings);
