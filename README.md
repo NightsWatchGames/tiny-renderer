@@ -24,6 +24,13 @@ cargo run --example bresenham_line
 cargo run --example rendering
 ```
 
+控制
+- F1 切换线框渲染
+- F2 切换顶点颜色插值
+- F3 切换片段着色
+- F4 切换投影方式
+- W/A/S/D/Q/E 控制相机移动
+
 ## 截图
 ![bresenham_line](./screenshots/bresenham_line.png)
 ![wireframe_rendering](./screenshots/wireframe_rendering.png)
