@@ -4,6 +4,7 @@ use crate::{
     math::{Mat4, Vec2, Vec3},
     model::{Mesh, Model, Vertex},
     shader::{FragmentShader, VertexShader},
+    texture::TextureStorage,
     transform,
 };
 
@@ -81,8 +82,13 @@ impl Renderer {
         }
     }
 
-    pub fn draw(&mut self, model: &Model, model_transformation: Mat4) {
-        for mesh in model.meshes.iter() {
+    pub fn draw(
+        &mut self,
+        meshes: &Vec<Mesh>,
+        model_transformation: Mat4,
+        texture_storage: &TextureStorage,
+    ) {
+        for mesh in meshes.iter() {
             for primitive in mesh.primitives.iter() {
                 for i in 0..primitive.vertices.len() / 3 {
                     let mut triangle = [
@@ -98,13 +104,13 @@ impl Renderer {
                     // 视口变换
                     self.apply_viewport_transformation(&mut triangle);
                     // 光栅化
-                    self.rasterize_trianlge(model, triangle);
+                    self.rasterize_trianlge(triangle, texture_storage);
                 }
             }
         }
     }
 
-    pub fn rasterize_trianlge(&mut self, model: &Model, triangle: [Vertex; 3]) {
+    pub fn rasterize_trianlge(&mut self, triangle: [Vertex; 3], texture_storage: &TextureStorage) {
         // 线框渲染
         if self.settings.wireframe {
             self.draw_line(
@@ -153,7 +159,7 @@ impl Renderer {
                                 let texcoord = triangle[0].texcoord.unwrap() * alpha
                                     + triangle[1].texcoord.unwrap() * beta
                                     + triangle[2].texcoord.unwrap() * gamma;
-                                let color = fragment_shader(model, texcoord);
+                                let color = fragment_shader(texture_storage, texcoord);
                                 self.draw_pixel(p, color);
                             }
                         } else if self.settings.vertex_color_interp {

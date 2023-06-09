@@ -37,12 +37,12 @@ pub fn main() {
         "rendering",
     );
 
-    // let model = load_glft("assets/cube/cube.gltf");
-    // let model = load_glft("assets/monkey/monkey.gltf");
-    let model = load_glft("assets/box-textured/BoxTextured.gltf");
-    // let model = load_glft("assets/sphere/sphere.gltf");
-    // let model = load_glft("assets/cornell-box.gltf");
-    // let model = custom_cube();
+    // let (meshes, texture_storage) = load_glft("assets/cube/cube.gltf");
+    // let (meshes, texture_storage) = load_glft("assets/monkey/monkey.gltf");
+    let (meshes, texture_storage) = load_glft("assets/box-textured/BoxTextured.gltf");
+    // let (meshes, texture_storage) = load_glft("assets/suzanne/Suzanne.gltf");
+    // let (meshes, texture_storage) = load_glft("assets/cornell-box.gltf");
+    // let (meshes, texture_storage) = custom_cube();
     let model_pos = Vec3::new(0.0, 0.0, 0.0);
     let model_transformation = translation_mat4(model_pos);
 
@@ -65,11 +65,12 @@ pub fn main() {
         ..Default::default()
     };
     let mut renderer = Renderer::new(camera, viewport, settings);
+    renderer.vertex_shader = Some(Box::new(|vertex| {}));
     renderer.fragment_shader = Some(Box::new(|model, texcoord| {
         if let Some(texture) = model.texture_id_map.get(&0) {
             return texture.sample(texcoord);
         }
-        Color::GREEN
+        Color::BLACK
     }));
 
     wind.draw(move |_| {
@@ -124,7 +125,7 @@ pub fn main() {
         }
 
         renderer.clear();
-        renderer.draw(&model, model_transformation);
+        renderer.draw(&meshes, model_transformation, &texture_storage);
         fltk::draw::draw_image(
             &flip_vertically(
                 &renderer.frame_buffer,

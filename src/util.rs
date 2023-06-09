@@ -6,6 +6,7 @@ use crate::{
     color::Color,
     math::Vec3,
     model::{Mesh, Model, Primitive, Vertex},
+    texture::TextureStorage,
 };
 
 pub fn flip_vertically(frame_buffer: &Vec<u8>, width: usize, height: usize) -> Vec<u8> {
@@ -31,7 +32,7 @@ pub fn rand_color() -> Color {
     )
 }
 
-pub fn custom_cube() -> Model {
+pub fn custom_cube() -> (Vec<Mesh>, TextureStorage) {
     let p0 = Vec3::new(-1.0, 1.0, 1.0);
     let p1 = Vec3::new(1.0, 1.0, 1.0);
     let p2 = Vec3::new(-1.0, -1.0, 1.0);
@@ -62,15 +63,15 @@ pub fn custom_cube() -> Model {
     vertices.append(&mut build_trangle(p4, p5, p6));
     vertices.append(&mut build_trangle(p5, p6, p7));
 
-    Model {
-        meshes: vec![Mesh {
+    (
+        vec![Mesh {
             primitives: vec![Primitive {
                 vertices,
                 ..Default::default()
             }],
         }],
-        texture_id_map: HashMap::new(),
-    }
+        TextureStorage::default(),
+    )
 }
 
 pub fn build_trangle(p0: Vec3, p1: Vec3, p2: Vec3) -> Vec<Vertex> {

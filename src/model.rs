@@ -1,16 +1,10 @@
-use gltf::{
-    buffer::Data,
-    image::Format,
-    json::validation::Checked,
-    mesh::util::{ReadColors, ReadTexCoords},
-    texture::{MagFilter, MinFilter, WrappingMode},
-    Document,
-};
+use gltf::{buffer::Data, Document};
 use std::collections::HashMap;
 
 use crate::{
     color::Color,
     math::{Vec2, Vec3, Vec4},
+    texture::{Sampler, Texture, TextureStorage},
     util::rand_color,
 };
 
@@ -28,47 +22,6 @@ pub struct Vertex {
 #[derive(Clone, Debug, Default)]
 pub struct Mesh {
     pub primitives: Vec<Primitive>,
-}
-
-#[derive(Clone, Debug)]
-pub struct Sampler {
-    pub mag_filter: Option<MagFilter>,
-    pub min_filter: Option<MinFilter>,
-    pub wrap_s: WrappingMode,
-    pub wrap_t: WrappingMode,
-}
-
-pub struct Texture {
-    pub id: usize,
-    pub width: u32,
-    pub height: u32,
-    pub format: Format,
-    pub data: Vec<u8>,
-    pub sampler: Sampler,
-}
-impl Texture {
-    pub fn sample(&self, mut texcoord: Vec2) -> Color {
-        if self.sampler.wrap_s != WrappingMode::Repeat
-            || self.sampler.wrap_t != WrappingMode::Repeat
-        {
-            panic!("Unsupported texture wrap mode: {:?}", self.sampler.wrap_s)
-        }
-        if texcoord.x > 1.0 {
-            texcoord.x -= texcoord.x.floor();
-        }
-        if texcoord.y > 1.0 {
-            texcoord.y -= texcoord.y.floor();
-        }
-        let x = (texcoord.x * (self.width - 1) as f32) as usize;
-        let y = (texcoord.y * (self.height - 1) as f32) as usize;
-
-        if self.format != Format::R8G8B8 {
-            panic!("Unsupported texture format: {:?}", self.format);
-        }
-        // 一个颜色占 3 个字节
-        let index = (y * self.width as usize + x) * 3;
-        Color::new(self.data[index], self.data[index + 1], self.data[index + 2])
-    }
 }
 
 #[derive(Clone, Debug, Default)]
@@ -89,19 +42,21 @@ pub struct Model {
     pub texture_id_map: HashMap<usize, Texture>,
 }
 
-pub fn load_glft(path: &str) -> Model {
+pub fn load_glft(path: &str) -> (Vec<Mesh>, TextureStorage) {
     let (document, buffers, images) = gltf::import(path).unwrap();
 
     let textures = load_textures(&document, &images);
     let meshes = load_meshes(&document, &buffers);
 
-    Model {
+    (
         meshes,
-        texture_id_map: textures
-            .into_iter()
-            .map(|texture| (texture.id, texture))
-            .collect(),
-    }
+        TextureStorage {
+            texture_id_map: textures
+                .into_iter()
+                .map(|texture| (texture.id, texture))
+                .collect(),
+        },
+    )
 }
 
 pub fn load_textures(document: &Document, images: &Vec<gltf::image::Data>) -> Vec<Texture> {
