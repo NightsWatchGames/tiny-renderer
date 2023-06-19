@@ -8,8 +8,8 @@ use fltk::{
 use tiny_renderer::{
     camera::Camera,
     color::Color,
+    loader::load_glft,
     math::{Quat, Vec3},
-    model::{load_glft, Model},
     renderer::{Renderer, RendererSettings, Viewport},
     transform::translation_mat4,
     util::{custom_cube, flip_vertically, rand_color},

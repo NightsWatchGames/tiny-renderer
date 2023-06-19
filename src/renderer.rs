@@ -2,7 +2,7 @@ use crate::{
     camera::Camera,
     color::Color,
     math::{Mat4, Vec2, Vec3},
-    model::{Mesh, Model, Vertex},
+    mesh::{Mesh, Vertex},
     shader::{FragmentShader, VertexShader},
     texture::TextureStorage,
     transform,

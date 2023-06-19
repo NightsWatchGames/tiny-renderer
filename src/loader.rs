@@ -1,46 +1,13 @@
 use gltf::{buffer::Data, Document};
-use std::collections::HashMap;
 
 use crate::{
     color::Color,
-    math::{Vec2, Vec3, Vec4},
+    material::Material,
+    math::{Vec2, Vec3},
+    mesh::{Mesh, Primitive, Vertex},
     texture::{Sampler, Texture, TextureStorage},
     util::rand_color,
 };
-
-#[derive(Clone, Copy, Debug, Default)]
-pub struct Vertex {
-    // 位置坐标
-    pub position: Vec3,
-    // 法线向量
-    pub normal: Option<Vec3>,
-    // 纹理坐标
-    pub texcoord: Option<Vec2>,
-    // 顶点颜色
-    pub color: Option<Color>,
-}
-#[derive(Clone, Debug, Default)]
-pub struct Mesh {
-    pub primitives: Vec<Primitive>,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct Primitive {
-    // 顶点数据（拓扑类型为Triangles）
-    pub vertices: Vec<Vertex>,
-    pub material: Material,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct Material {
-    pub base_color_texture: Option<usize>,
-    pub base_color_factor: Vec4,
-}
-
-pub struct Model {
-    pub meshes: Vec<Mesh>,
-    pub texture_id_map: HashMap<usize, Texture>,
-}
 
 pub fn load_glft(path: &str) -> (Vec<Mesh>, TextureStorage) {
     let (document, buffers, images) = gltf::import(path).unwrap();

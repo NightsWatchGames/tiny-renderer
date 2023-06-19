@@ -1,11 +1,9 @@
-use std::collections::HashMap;
-
 use rand::Rng;
 
 use crate::{
     color::Color,
     math::Vec3,
-    model::{Mesh, Model, Primitive, Vertex},
+    mesh::{Mesh, Primitive, Vertex},
     texture::TextureStorage,
 };
 
