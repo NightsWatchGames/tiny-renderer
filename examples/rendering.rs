@@ -11,6 +11,7 @@ use tiny_renderer::{
     loader::load_glft,
     math::{Quat, Vec3},
     renderer::{Renderer, RendererSettings, Viewport},
+    shader::phong_shader,
     transform::translation_mat4,
     util::{custom_cube, flip_vertically, rand_color},
 };
@@ -66,12 +67,7 @@ pub fn main() {
     };
     let mut renderer = Renderer::new(camera, viewport, settings);
     renderer.vertex_shader = Some(Box::new(|vertex| {}));
-    renderer.fragment_shader = Some(Box::new(|model, texcoord| {
-        if let Some(texture) = model.texture_id_map.get(&0) {
-            return texture.sample(texcoord);
-        }
-        Color::BLACK
-    }));
+    renderer.fragment_shader = Some(phong_shader());
 
     wind.draw(move |_| {
         if event_key_down(Key::F1) {

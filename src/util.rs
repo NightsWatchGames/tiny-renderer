@@ -3,7 +3,7 @@ use rand::Rng;
 use crate::{
     color::Color,
     math::Vec3,
-    mesh::{Mesh, Primitive, Vertex},
+    mesh::{Mesh, Vertex},
     texture::TextureStorage,
 };
 
@@ -63,10 +63,8 @@ pub fn custom_cube() -> (Vec<Mesh>, TextureStorage) {
 
     (
         vec![Mesh {
-            primitives: vec![Primitive {
-                vertices,
-                ..Default::default()
-            }],
+            vertices,
+            ..Default::default()
         }],
         TextureStorage::default(),
     )

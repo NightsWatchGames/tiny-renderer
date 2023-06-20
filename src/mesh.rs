@@ -17,11 +17,6 @@ pub struct Vertex {
 }
 #[derive(Clone, Debug, Default)]
 pub struct Mesh {
-    pub primitives: Vec<Primitive>,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct Primitive {
     // 顶点数据（拓扑类型为Triangles）
     pub vertices: Vec<Vertex>,
     pub material: Material,

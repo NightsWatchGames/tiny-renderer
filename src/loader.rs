@@ -4,7 +4,7 @@ use crate::{
     color::Color,
     material::Material,
     math::{Vec2, Vec3},
-    mesh::{Mesh, Primitive, Vertex},
+    mesh::{Mesh, Vertex},
     texture::{Sampler, Texture, TextureStorage},
     util::rand_color,
 };
@@ -67,10 +67,8 @@ pub fn load_meshes(document: &Document, buffers: &Vec<Data>) -> Vec<Mesh> {
     for gltf_mesh in document.meshes() {
         // println!("Primitives len: {}", gltf_mesh.primitives().len());
 
-        let mut mesh = Mesh::default();
-
         for gltf_primitive in gltf_mesh.primitives() {
-            let mut primitive = Primitive::default();
+            let mut mesh = Mesh::default();
 
             // 顶点数据
             if gltf_primitive.mode() != gltf::mesh::Mode::Triangles {
@@ -118,7 +116,7 @@ pub fn load_meshes(document: &Document, buffers: &Vec<Data>) -> Vec<Mesh> {
 
                 // println!("{:?}", vertex_texcoord);
                 // println!("{:?}", vertex_position);
-                primitive.vertices.push(Vertex {
+                mesh.vertices.push(Vertex {
                     position: vertex_position,
                     normal: vertex_normal,
                     texcoord: vertex_texcoord,
@@ -129,20 +127,11 @@ pub fn load_meshes(document: &Document, buffers: &Vec<Data>) -> Vec<Mesh> {
 
             // 材质
             let mut material = Material::default();
-            let gltf_material = gltf_primitive.material();
-            material.base_color_factor = gltf_material
-                .pbr_metallic_roughness()
-                .base_color_factor()
-                .into();
-            material.base_color_texture = gltf_material
-                .pbr_metallic_roughness()
-                .base_color_texture()
-                .map(|t| t.texture().index());
-            primitive.material = material;
+            // let gltf_material = gltf_primitive.material();
+            mesh.material = material;
 
-            mesh.primitives.push(primitive);
+            meshes.push(mesh);
         }
-        meshes.push(mesh);
     }
     meshes
 }

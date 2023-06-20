@@ -1,11 +1,11 @@
 use crate::{
     camera::Camera,
     color::Color,
+    light::PointLight,
     math::{Mat4, Vec2, Vec3},
     mesh::{Mesh, Vertex},
     shader::{FragmentShader, VertexShader},
-    texture::TextureStorage,
-    transform,
+    texture::TextureStorage, material::Material,
 };
 
 //// 视口
@@ -61,6 +61,7 @@ pub struct Renderer {
     pub camera: Camera,
     pub viewport: Viewport,
     pub settings: RendererSettings,
+    pub light: PointLight,
     pub vertex_shader: Option<VertexShader>,
     pub fragment_shader: Option<FragmentShader>,
     // 帧缓冲
@@ -75,6 +76,7 @@ impl Renderer {
             camera,
             viewport,
             settings,
+            light: PointLight::default(),
             vertex_shader: None,
             fragment_shader: None,
             frame_buffer: vec![0; pixel_count * 3],
@@ -89,28 +91,26 @@ impl Renderer {
         texture_storage: &TextureStorage,
     ) {
         for mesh in meshes.iter() {
-            for primitive in mesh.primitives.iter() {
-                for i in 0..primitive.vertices.len() / 3 {
-                    let mut triangle = [
-                        primitive.vertices[i * 3],
-                        primitive.vertices[1 + i * 3],
-                        primitive.vertices[2 + i * 3],
-                    ];
-                    // 顶点着色
-                    self.vertex_shading(&mut triangle);
-                    // mvp变换
-                    self.apply_mvp_transformations(&mut triangle, model_transformation);
-                    // TODO 视椎体裁剪
-                    // 视口变换
-                    self.apply_viewport_transformation(&mut triangle);
-                    // 光栅化
-                    self.rasterize_trianlge(triangle, texture_storage);
-                }
+            for i in 0..mesh.vertices.len() / 3 {
+                let mut triangle = [
+                    mesh.vertices[i * 3],
+                    mesh.vertices[1 + i * 3],
+                    mesh.vertices[2 + i * 3],
+                ];
+                // 顶点着色
+                self.vertex_shading(&mut triangle);
+                // mvp变换
+                self.apply_mvp_transformations(&mut triangle, model_transformation);
+                // TODO 视椎体裁剪
+                // 视口变换
+                self.apply_viewport_transformation(&mut triangle);
+                // 光栅化
+                self.rasterize_trianlge(triangle, &mesh.material, texture_storage);
             }
         }
     }
 
-    pub fn rasterize_trianlge(&mut self, triangle: [Vertex; 3], texture_storage: &TextureStorage) {
+    pub fn rasterize_trianlge(&mut self, triangle: [Vertex; 3], material: &Material, texture_storage: &TextureStorage) {
         // 线框渲染
         if self.settings.wireframe {
             self.draw_line(
@@ -159,7 +159,7 @@ impl Renderer {
                                 let texcoord = triangle[0].texcoord.unwrap() * alpha
                                     + triangle[1].texcoord.unwrap() * beta
                                     + triangle[2].texcoord.unwrap() * gamma;
-                                let color = fragment_shader(texture_storage, texcoord);
+                                let color = fragment_shader(texture_storage, &self.light, material, texcoord);
                                 self.draw_pixel(p, color);
                             }
                         } else if self.settings.vertex_color_interp {
