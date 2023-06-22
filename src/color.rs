@@ -1,5 +1,7 @@
 use std::ops::{Add, Mul};
 
+use crate::math::{Vec3, Vec4};
+
 #[derive(Debug, Clone, Copy)]
 pub struct Color {
     pub r: u8,
@@ -15,6 +17,32 @@ impl Color {
 
     pub const fn new(r: u8, g: u8, b: u8) -> Self {
         Self { r, g, b }
+    }
+
+    pub fn from_vec3(mut v: Vec3) -> Self {
+        // TODO 颜色归一化
+        let max = v.x.max(v.y).max(v.z);
+        if max > 1.0 {
+            v.x /= max;
+            v.y /= max;
+            v.z /= max;
+        }
+        // assert!(v.x >= 0.0 && v.x <= 1.0);
+        // assert!(v.y >= 0.0 && v.y <= 1.0);
+        // assert!(v.z >= 0.0 && v.z <= 1.0);
+        Self::new(
+            (v.x * 255.0) as u8,
+            (v.y * 255.0) as u8,
+            (v.z * 255.0) as u8,
+        )
+    }
+
+    pub fn to_vec3(&self) -> Vec3 {
+        Vec3::new(
+            self.r as f32 / 255.0,
+            self.g as f32 / 255.0,
+            self.b as f32 / 255.0,
+        )
     }
 }
 impl Default for Color {

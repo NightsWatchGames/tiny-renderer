@@ -8,6 +8,7 @@ use fltk::{
 use tiny_renderer::{
     camera::Camera,
     color::Color,
+    light::PointLight,
     loader::load_glft,
     math::{Quat, Vec3},
     renderer::{Renderer, RendererSettings, Viewport},
@@ -46,6 +47,11 @@ pub fn main() {
     // let (meshes, texture_storage) = custom_cube();
     let model_pos = Vec3::new(0.0, 0.0, 0.0);
     let model_transformation = translation_mat4(model_pos);
+
+    let light = PointLight {
+        position: Vec3::new(0.0, 10.0, 0.0),
+        intensity: 7.0,
+    };
 
     let mut camera = Camera::new(
         5.0,
@@ -121,7 +127,7 @@ pub fn main() {
         }
 
         renderer.clear();
-        renderer.draw(&meshes, model_transformation, &texture_storage);
+        renderer.draw(&meshes, model_transformation, light, &texture_storage);
         fltk::draw::draw_image(
             &flip_vertically(
                 &renderer.frame_buffer,

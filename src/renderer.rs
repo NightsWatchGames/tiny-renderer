@@ -1,11 +1,14 @@
+use std::default;
+
 use crate::{
     camera::Camera,
     color::Color,
     light::PointLight,
+    material::Material,
     math::{Mat4, Vec2, Vec3},
     mesh::{Mesh, Vertex},
-    shader::{FragmentShader, VertexShader},
-    texture::TextureStorage, material::Material,
+    shader::{FragmentShader, FragmentShaderPayload, VertexShader},
+    texture::TextureStorage,
 };
 
 //// 视口
@@ -61,7 +64,6 @@ pub struct Renderer {
     pub camera: Camera,
     pub viewport: Viewport,
     pub settings: RendererSettings,
-    pub light: PointLight,
     pub vertex_shader: Option<VertexShader>,
     pub fragment_shader: Option<FragmentShader>,
     // 帧缓冲
@@ -76,7 +78,6 @@ impl Renderer {
             camera,
             viewport,
             settings,
-            light: PointLight::default(),
             vertex_shader: None,
             fragment_shader: None,
             frame_buffer: vec![0; pixel_count * 3],
@@ -88,6 +89,7 @@ impl Renderer {
         &mut self,
         meshes: &Vec<Mesh>,
         model_transformation: Mat4,
+        mut light: PointLight,
         texture_storage: &TextureStorage,
     ) {
         for mesh in meshes.iter() {
@@ -97,20 +99,42 @@ impl Renderer {
                     mesh.vertices[1 + i * 3],
                     mesh.vertices[2 + i * 3],
                 ];
+                let mut ori_triangle = triangle;
                 // 顶点着色
                 self.vertex_shading(&mut triangle);
                 // mvp变换
                 self.apply_mvp_transformations(&mut triangle, model_transformation);
+                // TODO 光源视图变换
+                light.position = (self.camera.view_transformation() * light.position.extend(1.0))
+                    .to_cartesian_point();
+                for vertex in ori_triangle.iter_mut() {
+                    vertex.position = (self.camera.view_transformation()
+                        * vertex.position.extend(1.0))
+                    .to_cartesian_point();
+                }
                 // TODO 视椎体裁剪
                 // 视口变换
                 self.apply_viewport_transformation(&mut triangle);
                 // 光栅化
-                self.rasterize_trianlge(triangle, &mesh.material, texture_storage);
+                self.rasterize_trianlge(
+                    ori_triangle,
+                    triangle,
+                    &mesh.material,
+                    &light,
+                    texture_storage,
+                );
             }
         }
     }
 
-    pub fn rasterize_trianlge(&mut self, triangle: [Vertex; 3], material: &Material, texture_storage: &TextureStorage) {
+    pub fn rasterize_trianlge(
+        &mut self,
+        ori_triangle: [Vertex; 3],
+        triangle: [Vertex; 3],
+        material: &Material,
+        light: &PointLight,
+        texture_storage: &TextureStorage,
+    ) {
         // 线框渲染
         if self.settings.wireframe {
             self.draw_line(
@@ -156,10 +180,16 @@ impl Renderer {
                         if self.settings.fragment_shading {
                             // 片段着色
                             if let Some(fragment_shader) = &self.fragment_shader {
-                                let texcoord = triangle[0].texcoord.unwrap() * alpha
-                                    + triangle[1].texcoord.unwrap() * beta
-                                    + triangle[2].texcoord.unwrap() * gamma;
-                                let color = fragment_shader(texture_storage, &self.light, material, texcoord);
+                                let fragment_shader_payload = FragmentShaderPayload {
+                                    ori_triangle,
+                                    triangle,
+                                    barycenter: Vec3::new(alpha, beta, gamma),
+                                    light: light.clone(),
+                                    material: material.clone(),
+                                    ..Default::default()
+                                };
+                                let color =
+                                    fragment_shader(&fragment_shader_payload, texture_storage);
                                 self.draw_pixel(p, color);
                             }
                         } else if self.settings.vertex_color_interp {

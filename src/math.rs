@@ -261,6 +261,9 @@ impl Vec4 {
         assert!(self.w == 0.0);
         Vec3::new(self.x, self.y, self.z)
     }
+    pub fn truncate(self) -> Vec3 {
+        Vec3::new(self.x, self.y, self.z)
+    }
 }
 impl Add<Vec4> for Vec4 {
     type Output = Self;
