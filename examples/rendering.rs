@@ -67,8 +67,8 @@ pub fn main() {
     let viewport = Viewport::new(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
     let settings = RendererSettings {
         wireframe: false,
-        vertex_color_interp: true,
-        fragment_shading: false,
+        vertex_color_interp: false,
+        fragment_shading: true,
         ..Default::default()
     };
     let mut renderer = Renderer::new(camera, viewport, settings);

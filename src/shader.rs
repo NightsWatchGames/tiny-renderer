@@ -9,7 +9,7 @@ use crate::{
     texture::TextureStorage,
 };
 
-const AMBIENT_LIGHT_INTENSITY: f32 = 0.1;
+const AMBIENT_LIGHT_INTENSITY: f32 = 2.0;
 
 // TODO 使用引用+生命周期
 #[derive(Debug, Clone, Default)]
@@ -48,10 +48,14 @@ pub fn phong_shader() -> FragmentShader {
         let texcoord = ori_triangle[0].texcoord.unwrap() * barycenter.x
             + ori_triangle[1].texcoord.unwrap() * barycenter.y
             + ori_triangle[2].texcoord.unwrap() * barycenter.z;
+        let texcolor = texture_storage
+            .texture_id_map
+            .get(&0)
+            .map(|texture| texture.sample(texcoord));
 
         // 漫反射系数
-        let kd = if let Some(texture) = texture_storage.texture_id_map.get(&0) {
-            texture.sample(texcoord).to_vec3()
+        let kd = if let Some(texcolor) = texcolor {
+            texcolor.to_vec3()
         } else {
             material.diffuse
         };
@@ -87,7 +91,12 @@ pub fn phong_shader() -> FragmentShader {
         // println!("specular: {:?}", specular);
 
         // let mut result = ambient + diffuse + specular;
-        let mut result = ambient;
+        let mut result = if let Some(texcolor) = texcolor {
+            (Color::from_vec3(ambient) * texcolor).to_vec3() + diffuse
+        } else {
+            ambient + diffuse
+        };
+        // println!("result: {:?}", result);
         result.x = result.x.clamp(0.0, 1.0);
         result.y = result.y.clamp(0.0, 1.0);
         result.z = result.z.clamp(0.0, 1.0);

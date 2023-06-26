@@ -26,6 +26,9 @@ impl Vec2 {
     pub fn dot(self, rhs: Self) -> f32 {
         self.x * rhs.x + self.y * rhs.y
     }
+    pub fn cross(self, rhs: Self) -> f32 {
+        self.x * rhs.y - self.y * rhs.x
+    }
     // 长度
     pub fn length(self) -> f32 {
         self.dot(self).sqrt()
