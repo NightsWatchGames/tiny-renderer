@@ -180,6 +180,7 @@ impl Renderer {
                         if self.settings.fragment_shading {
                             // 片段着色
                             if let Some(fragment_shader) = &self.fragment_shader {
+                                // FIXME 计算3d重心坐标
                                 let fragment_shader_payload = FragmentShaderPayload {
                                     ori_triangle,
                                     triangle,
@@ -271,9 +272,9 @@ impl Renderer {
         // 以viewport左下角为原点
         let (x, y) = (x - self.viewport.x, y - self.viewport.y);
         let index = (y * self.viewport.width as i32 + x) as usize;
-        self.frame_buffer[index * 3] = color.r;
-        self.frame_buffer[index * 3 + 1] = color.g;
-        self.frame_buffer[index * 3 + 2] = color.b;
+        self.frame_buffer[index * 3] = (color.r * 255.) as u8;
+        self.frame_buffer[index * 3 + 1] = (color.g * 255.) as u8;
+        self.frame_buffer[index * 3 + 2] = (color.b * 255.) as u8;
     }
 
     // Bresenham画线算法
@@ -412,6 +413,28 @@ impl Renderer {
 
 // 重心坐标
 pub fn barycentric_2d(p: Vec2, a: Vec2, b: Vec2, c: Vec2) -> (f32, f32, f32) {
+    let p = p.extend(1.0);
+    let a = a.extend(1.0);
+    let b = b.extend(1.0);
+    let c = c.extend(1.0);
+
+    let ab = b - a;
+    let ac = c - a;
+    let ap = p - a;
+    let d00 = ab.dot(ab);
+    let d01 = ab.dot(ac);
+    let d11 = ac.dot(ac);
+    let d20 = ap.dot(ab);
+    let d21 = ap.dot(ac);
+    let denom = d00 * d11 - d01 * d01;
+    let v = (d11 * d20 - d01 * d21) / denom;
+    let w = (d00 * d21 - d01 * d20) / denom;
+    let u = 1.0 - v - w;
+    (u, v, w)
+}
+
+// TODO 3d重心坐标
+pub fn barycentric_3d(p: Vec3, a: Vec3, b: Vec3, c: Vec3) -> (f32, f32, f32) {
     let p = p.extend(1.0);
     let a = a.extend(1.0);
     let b = b.extend(1.0);

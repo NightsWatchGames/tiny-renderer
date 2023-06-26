@@ -49,8 +49,8 @@ pub fn main() {
     let model_transformation = translation_mat4(model_pos);
 
     let light = PointLight {
-        position: Vec3::new(0.0, 10.0, 0.0),
-        intensity: 7.0,
+        position: Vec3::new(10.0, 10.0, -10.0),
+        intensity: 100.0,
     };
 
     let mut camera = Camera::new(

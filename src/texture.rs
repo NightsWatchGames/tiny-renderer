@@ -47,7 +47,11 @@ impl Texture {
         } else {
             panic!("Unsupported texture format: {:?}", self.format);
         };
-        Color::new(self.data[index], self.data[index + 1], self.data[index + 2])
+        Color::new(
+            self.data[index] as f32 / 255.,
+            self.data[index + 1] as f32 / 255.,
+            self.data[index + 2] as f32 / 255.,
+        )
     }
 }
 

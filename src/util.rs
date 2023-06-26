@@ -24,9 +24,9 @@ pub fn flip_vertically(frame_buffer: &Vec<u8>, width: usize, height: usize) -> V
 pub fn rand_color() -> Color {
     let mut rng = rand::thread_rng();
     Color::new(
-        rng.gen_range(0..=255),
-        rng.gen_range(0..=255),
-        rng.gen_range(0..=255),
+        rng.gen_range(0.0..=1.0),
+        rng.gen_range(0.0..=1.0),
+        rng.gen_range(0.0..=1.0),
     )
 }
 

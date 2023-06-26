@@ -9,6 +9,8 @@ use crate::{
     texture::TextureStorage,
 };
 
+const AMBIENT_LIGHT_INTENSITY: f32 = 0.1;
+
 // TODO 使用引用+生命周期
 #[derive(Debug, Clone, Default)]
 pub struct FragmentShaderPayload {
@@ -49,7 +51,7 @@ pub fn phong_shader() -> FragmentShader {
 
         // 漫反射系数
         let kd = if let Some(texture) = texture_storage.texture_id_map.get(&0) {
-            texture.sample(texcoord).to_vec3().extend(1.0)
+            texture.sample(texcoord).to_vec3()
         } else {
             material.diffuse
         };
@@ -70,14 +72,25 @@ pub fn phong_shader() -> FragmentShader {
         let r = (light.position - pos).length();
 
         // 环境光
-        let ambient = material.ambient * light.intensity;
+        let ambient = material.ambient * AMBIENT_LIGHT_INTENSITY;
+        // println!("ambient: {:?}", ambient);
         // 漫反射
         let diffuse = kd * (light.intensity / (r * r)) * n.dot(l).max(0.0);
+        if diffuse.x < 0.00001 {
+            // println!("diffuse: {:?}", diffuse);
+        }
+        // println!("diffuse: {:?}", diffuse);
         // 镜面反射
         let specular = material.specular
             * (light.intensity / (r * r))
             * (n.dot(h).max(0.0).powf(material.shininess));
+        // println!("specular: {:?}", specular);
 
-        Color::from_vec3((ambient + diffuse + specular).truncate())
+        // let mut result = ambient + diffuse + specular;
+        let mut result = ambient;
+        result.x = result.x.clamp(0.0, 1.0);
+        result.y = result.y.clamp(0.0, 1.0);
+        result.z = result.z.clamp(0.0, 1.0);
+        Color::from_vec3(result)
     })
 }

@@ -79,7 +79,7 @@ pub fn load_meshes(document: &Document, buffers: &Vec<Data>) -> Vec<Mesh> {
 
             let mut positions: Vec<[f32; 3]> = Vec::new();
             let mut normals: Vec<[f32; 3]> = Vec::new();
-            let mut colors: Vec<[u8; 3]> = Vec::new();
+            let mut colors: Vec<[f32; 3]> = Vec::new();
             let mut texcoords: Vec<[f32; 2]> = Vec::new();
 
             for (semantic, _) in gltf_primitive.attributes() {
@@ -91,7 +91,7 @@ pub fn load_meshes(document: &Document, buffers: &Vec<Data>) -> Vec<Mesh> {
                         normals = reader.read_normals().unwrap().collect();
                     }
                     gltf::Semantic::Colors(set) => {
-                        colors = reader.read_colors(set).unwrap().into_rgb_u8().collect();
+                        colors = reader.read_colors(set).unwrap().into_rgb_f32().collect();
                     }
                     gltf::Semantic::TexCoords(set) => {
                         texcoords = reader.read_tex_coords(set).unwrap().into_f32().collect();
