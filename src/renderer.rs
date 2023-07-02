@@ -99,18 +99,33 @@ impl Renderer {
                     mesh.vertices[1 + i * 3],
                     mesh.vertices[2 + i * 3],
                 ];
-                let mut ori_triangle = triangle;
+
                 // 顶点着色
                 self.vertex_shading(&mut triangle);
-                // mvp变换
-                self.apply_mvp_transformations(&mut triangle, model_transformation);
-                // TODO 光源视图变换
-                light.position = (self.camera.view_transformation() * light.position.extend(1.0))
-                    .to_cartesian_point();
-                for vertex in ori_triangle.iter_mut() {
-                    vertex.position = self.camera.view_transformation() * vertex.position;
+
+                // 模型变换
+                self.apply_model_transformation(&mut triangle, model_transformation);
+
+                // 视图变换
+                self.apply_view_transformation(&mut triangle, &mut light);
+
+                // 保存视图空间坐标
+                let view_space_positions: [Vec3; 3] =
+                    triangle.map(|v| v.position.to_cartesian_point());
+
+                // 投影变换
+                self.apply_projection_transformation(&mut triangle);
+
+                // 透视除法
+                for vertex in triangle.iter_mut() {
+                    vertex.position.x /= vertex.position.w;
+                    vertex.position.y /= vertex.position.w;
+                    vertex.position.z /= vertex.position.w;
+                    vertex.position.w = 1.0;
                 }
+
                 // TODO 视椎体裁剪
+
                 // 视口变换
                 self.apply_viewport_transformation(&mut triangle);
 
@@ -121,7 +136,7 @@ impl Renderer {
 
                 // 光栅化
                 self.rasterize_trianlge(
-                    ori_triangle,
+                    view_space_positions,
                     triangle,
                     &mesh.material,
                     &light,
@@ -133,7 +148,7 @@ impl Renderer {
 
     pub fn rasterize_trianlge(
         &mut self,
-        ori_triangle: [Vertex; 3],
+        view_space_positions: [Vec3; 3],
         triangle: [Vertex; 3],
         material: &Material,
         light: &PointLight,
@@ -165,8 +180,8 @@ impl Renderer {
                             if let Some(fragment_shader) = &self.fragment_shader {
                                 // FIXME 透视矫正
                                 let fragment_shader_payload = FragmentShaderPayload {
-                                    ori_triangle,
                                     triangle,
+                                    view_space_positions,
                                     barycenter: Vec3::new(alpha, beta, gamma),
                                     light: light.clone(),
                                     material: material.clone(),
@@ -202,37 +217,28 @@ impl Renderer {
         }
     }
 
-    pub fn apply_mvp_transformations(&self, vertices: &mut [Vertex], model_transformation: Mat4) {
-        // 视图变换
+    pub fn apply_model_transformation(&self, vertices: &mut [Vertex], model_transformation: Mat4) {
+        for vertex in vertices.iter_mut() {
+            vertex.position = model_transformation * vertex.position;
+        }
+    }
+
+    pub fn apply_view_transformation(&mut self, vertices: &mut [Vertex], light: &mut PointLight) {
         let view_transformation = self.camera.view_transformation();
-        // 投影变换
+        for vertex in vertices.iter_mut() {
+            vertex.position = view_transformation * vertex.position;
+        }
+        // 光源视图变换
+        light.position = (view_transformation * light.position.extend(1.0)).to_cartesian_point();
+    }
+
+    pub fn apply_projection_transformation(&self, vertices: &mut [Vertex]) {
         let projection_transformation = match self.settings.projection {
             Projection::Perspective => self.camera.frustum.persp_projection_transformation(),
             Projection::Orthographic => self.camera.frustum.ortho_projection_transformation(),
         };
         for vertex in vertices.iter_mut() {
-            vertex.position = projection_transformation
-                * view_transformation
-                * model_transformation
-                * vertex.position;
-        }
-
-        // TODO 保存真实z值
-
-        // 透视除法
-        for vertex in vertices.iter_mut() {
-            vertex.position.x /= vertex.position.w;
-            vertex.position.y /= vertex.position.w;
-            vertex.position.z /= vertex.position.w;
-            vertex.position.w = 1.0;
-        }
-        for vertex in vertices.iter() {
-            // println!("after proj trans, pos: {:?}", vertex.position);
-            // assert!(vertex.position.x.abs() <= 1.0);
-            // assert!(vertex.position.y.abs() <= 1.0);
-            // println!("after proj trans, pos.z: {:?}", vertex.position.z);
-            // FIXME 存在问题，asset失败
-            // assert!(vertex.position.z.abs() <= 1.0);
+            vertex.position = projection_transformation * vertex.position;
         }
     }
 

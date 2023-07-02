@@ -14,8 +14,8 @@ const AMBIENT_LIGHT_INTENSITY: f32 = 2.0;
 // TODO 使用引用+生命周期
 #[derive(Debug, Clone, Default)]
 pub struct FragmentShaderPayload {
-    pub ori_triangle: [Vertex; 3],
     pub triangle: [Vertex; 3],
+    pub view_space_positions: [Vec3; 3],
     pub barycenter: Vec3,
     pub light: PointLight,
     pub material: Material,
@@ -37,17 +37,18 @@ pub struct Uniforms {
 
 pub fn phong_shader() -> FragmentShader {
     Box::new(|payload, texture_storage| {
-        let ori_triangle = payload.ori_triangle;
+        let view_space_positions = payload.view_space_positions;
+        let triangle = payload.triangle;
         let barycenter = payload.barycenter;
         let light = payload.light;
         let material = payload.material;
         // 着色点
-        let pos = ori_triangle[0].position * barycenter.x
-            + ori_triangle[1].position * barycenter.y
-            + ori_triangle[2].position * barycenter.z;
-        let texcoord = ori_triangle[0].texcoord.unwrap() * barycenter.x
-            + ori_triangle[1].texcoord.unwrap() * barycenter.y
-            + ori_triangle[2].texcoord.unwrap() * barycenter.z;
+        let pos = view_space_positions[0] * barycenter.x
+            + view_space_positions[1] * barycenter.y
+            + view_space_positions[2] * barycenter.z;
+        let texcoord = triangle[0].texcoord.unwrap() * barycenter.x
+            + triangle[1].texcoord.unwrap() * barycenter.y
+            + triangle[2].texcoord.unwrap() * barycenter.z;
         let texcolor = texture_storage
             .texture_id_map
             .get(&0)
@@ -62,18 +63,18 @@ pub fn phong_shader() -> FragmentShader {
 
         // TODO 处理unwrap / 使用宏简化
         // 法线
-        let n = (ori_triangle[0].normal.unwrap() * barycenter.x
-            + ori_triangle[1].normal.unwrap() * barycenter.y
-            + ori_triangle[2].normal.unwrap() * barycenter.z)
+        let n = (triangle[0].normal.unwrap() * barycenter.x
+            + triangle[1].normal.unwrap() * barycenter.y
+            + triangle[2].normal.unwrap() * barycenter.z)
             .normalize();
         // 入射光线向量
-        let l = (light.position - pos.to_cartesian_point()).normalize();
+        let l = (light.position - pos).normalize();
         // 视线向量
-        let v = (Vec3::ZERO - pos.to_cartesian_point()).normalize();
+        let v = (Vec3::ZERO - pos).normalize();
         // 半程向量
         let h = (l + v).normalize();
         // 入射光线距离
-        let r = (light.position - pos.to_cartesian_point()).length();
+        let r = (light.position - pos).length();
 
         // 环境光
         let ambient = material.ambient * AMBIENT_LIGHT_INTENSITY;
