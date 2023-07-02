@@ -12,7 +12,7 @@ impl Default for PointLight {
     fn default() -> Self {
         Self {
             position: Vec3::new(100.0, 100.0, -100.0),
-            intensity: 1000.0,
+            intensity: 10000.0,
         }
     }
 }

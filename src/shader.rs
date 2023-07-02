@@ -54,11 +54,11 @@ pub fn phong_shader() -> FragmentShader {
             .map(|texture| texture.sample(texcoord));
 
         // 漫反射系数
-        let kd = if let Some(texcolor) = texcolor {
-            texcolor.to_vec3()
-        } else {
-            material.diffuse
-        };
+        // let kd = if let Some(texcolor) = texcolor {
+            // texcolor.to_vec3()
+        // } else {
+            // material.diffuse
+        // };
 
         // TODO 处理unwrap / 使用宏简化
         // 法线
@@ -77,9 +77,8 @@ pub fn phong_shader() -> FragmentShader {
 
         // 环境光
         let ambient = material.ambient * AMBIENT_LIGHT_INTENSITY;
-        // println!("ambient: {:?}", ambient);
         // 漫反射
-        let diffuse = kd * (light.intensity / (r * r)) * n.dot(l).max(0.0);
+        let diffuse = material.diffuse * (light.intensity / (r * r)) * n.dot(l).max(0.0);
         if diffuse.x < 0.00001 {
             // println!("diffuse: {:?}", diffuse);
         }
@@ -88,18 +87,25 @@ pub fn phong_shader() -> FragmentShader {
         let specular = material.specular
             * (light.intensity / (r * r))
             * (n.dot(h).max(0.0).powf(material.shininess));
+        if n.dot(h) > 0.9 && r*r < 100. {
+            // println!("n.dot(h): {:?}, r*r: {:?}", n.dot(h), r*r);
+        }
+        // println!("light.intensity: {:?}, r*r: {:?}", light.intensity, r*r);
+        if specular.x > 1.0 || specular.y > 1.0 || specular.z > 1.0 {
+            // println!("specular: {:?}", specular);
+        }
         // println!("specular: {:?}", specular);
 
-        // let mut result = ambient + diffuse + specular;
-        let mut result = if let Some(texcolor) = texcolor {
-            (Color::from_vec3(ambient) * texcolor).to_vec3() + diffuse
+        // let light = ambient + diffuse + specular;
+        let light = ambient + diffuse;
+        let (mut r, mut g, mut b) = if let Some(texcolor) = texcolor {
+            (light.x * texcolor.r, light.y * texcolor.g, light.z * texcolor.b)
         } else {
-            ambient + diffuse
+            (light.x, light.y, light.z)
         };
-        // println!("result: {:?}", result);
-        result.x = result.x.clamp(0.0, 1.0);
-        result.y = result.y.clamp(0.0, 1.0);
-        result.z = result.z.clamp(0.0, 1.0);
-        Color::from_vec3(result)
+        r = r.clamp(0.0, 1.0);
+        g = g.clamp(0.0, 1.0);
+        b = b.clamp(0.0, 1.0);
+        Color::new(r, g, b)
     })
 }

@@ -4,8 +4,8 @@ use crate::{
     camera::Camera,
     color::Color,
     light::PointLight,
-    material::Material,
-    math::{Mat4, Vec2, Vec3},
+    material::{Material, self},
+    math::{Mat4, Vec2, Vec3, Vec4},
     mesh::{Mesh, Vertex},
     shader::{FragmentShader, FragmentShaderPayload, VertexShader},
     texture::TextureStorage,
@@ -154,10 +154,14 @@ impl Renderer {
             );
         }
 
-        // 光栅化
+        // 包围盒
         let aabb2d = bounding_box2d(&triangle.map(|v| Vec2::new(v.position.x, v.position.y)));
+
+        // 光栅化
         for x in aabb2d.min.x as u32..=aabb2d.max.x as u32 {
             for y in aabb2d.min.y as u32..=aabb2d.max.y as u32 {
+
+                // 计算屏幕三角形重心坐标
                 let p = Vec2::new(x as f32, y as f32);
                 let (alpha, beta, gamma) = barycentric_2d(
                     p,
@@ -180,7 +184,7 @@ impl Renderer {
                         if self.settings.fragment_shading {
                             // 片段着色
                             if let Some(fragment_shader) = &self.fragment_shader {
-                                // FIXME 计算3d重心坐标
+                                // FIXME 透视矫正
                                 let fragment_shader_payload = FragmentShaderPayload {
                                     ori_triangle,
                                     triangle,
@@ -418,28 +422,6 @@ pub fn barycentric_2d(p: Vec2, a: Vec2, b: Vec2, c: Vec2) -> (f32, f32, f32) {
     let beta = (c - p).cross(a - p) / area_twice;
     let gamma = (a - p).cross(b - p) / area_twice;
     (alpha, beta, gamma)
-}
-
-// TODO 3d重心坐标
-pub fn barycentric_3d(p: Vec3, a: Vec3, b: Vec3, c: Vec3) -> (f32, f32, f32) {
-    let p = p.extend(1.0);
-    let a = a.extend(1.0);
-    let b = b.extend(1.0);
-    let c = c.extend(1.0);
-
-    let ab = b - a;
-    let ac = c - a;
-    let ap = p - a;
-    let d00 = ab.dot(ab);
-    let d01 = ab.dot(ac);
-    let d11 = ac.dot(ac);
-    let d20 = ap.dot(ab);
-    let d21 = ap.dot(ac);
-    let denom = d00 * d11 - d01 * d01;
-    let v = (d11 * d20 - d01 * d21) / denom;
-    let w = (d00 * d21 - d01 * d20) / denom;
-    let u = 1.0 - v - w;
-    (u, v, w)
 }
 
 // Cohen-Sutherland线段裁剪算法
