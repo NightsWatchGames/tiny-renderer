@@ -116,13 +116,8 @@ impl Renderer {
                 // 投影变换
                 self.apply_projection_transformation(&mut triangle);
 
-                // 透视除法
-                for vertex in triangle.iter_mut() {
-                    vertex.position.x /= vertex.position.w;
-                    vertex.position.y /= vertex.position.w;
-                    vertex.position.z /= vertex.position.w;
-                    vertex.position.w = 1.0;
-                }
+                // 透视（齐次）除法
+                Self::homogeneous_division(&mut triangle);
 
                 // TODO 视椎体裁剪
 
@@ -165,20 +160,21 @@ impl Renderer {
                 let (alpha, beta, gamma) = barycentric_2d_triangle(p, &triangle);
 
                 // 判断是否在三角形内
-                if alpha > 0.0 && beta > 0.0 && gamma > 0.0 {
-                    let z = alpha * triangle[0].position.z
-                        + beta * triangle[1].position.z
-                        + gamma * triangle[2].position.z;
+                if Self::inside_triangle((alpha, beta, gamma)) {
+                    let z = Self::z_interpolation(&triangle, (alpha, beta, gamma));
                     let index = (y * self.viewport.width + x) as usize;
 
                     // 深度测试
                     if z > self.depth_buffer[index] {
                         self.depth_buffer[index] = z;
 
+                        // 透视矫正
+                        let (alpha, beta, gamma) =
+                            Self::perspective_correct(&triangle, (alpha, beta, gamma));
+
                         if self.settings.fragment_shading {
                             // 片段着色
                             if let Some(fragment_shader) = &self.fragment_shader {
-                                // FIXME 透视矫正
                                 let fragment_shader_payload = FragmentShaderPayload {
                                     triangle,
                                     view_space_positions,
@@ -409,6 +405,45 @@ impl Renderer {
                 self.draw_pixel(Vec2::new(x as f32, y as f32), color);
             }
         }
+    }
+
+    pub fn homogeneous_division(vertexs: &mut [Vertex]) {
+        vertexs.iter_mut().for_each(|v| {
+            v.position.x /= v.position.w;
+            v.position.y /= v.position.w;
+            v.position.z /= v.position.w;
+            v.position.w = 1.0;
+        })
+    }
+
+    pub fn inside_triangle((alpha, beta, gamma): (f32, f32, f32)) -> bool {
+        alpha > 0.0 && beta > 0.0 && gamma > 0.0
+    }
+
+    pub fn z_interpolation(triangle: &[Vertex; 3], (alpha, beta, gamma): (f32, f32, f32)) -> f32 {
+        let v0 = triangle[0].position;
+        let v1 = triangle[1].position;
+        let v2 = triangle[2].position;
+        let w_reciprocal = 1.0 / (alpha / v0.w + beta / v1.w + gamma / v2.w);
+        let mut z_interpolated = alpha * v0.z / v0.w + beta * v1.z / v1.w + gamma * v2.z / v2.w;
+        z_interpolated *= w_reciprocal;
+        z_interpolated
+    }
+
+    // 透视矫正
+    pub fn perspective_correct(
+        triangle: &[Vertex; 3],
+        (alpha, beta, gamma): (f32, f32, f32),
+    ) -> (f32, f32, f32) {
+        let w0 = triangle[0].position.w.recip() * alpha;
+        let w1 = triangle[1].position.w.recip() * beta;
+        let w2 = triangle[2].position.w.recip() * gamma;
+        let normalizer = 1.0 / (w0 + w1 + w2);
+        println!(
+            "sum: {}",
+            w0 * normalizer + w1 * normalizer + w2 * normalizer
+        );
+        (w0 * normalizer, w1 * normalizer, w2 * normalizer)
     }
 
     pub fn clear(&mut self) {
