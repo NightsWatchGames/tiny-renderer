@@ -62,10 +62,8 @@ pub fn load_textures(document: &Document, images: &Vec<gltf::image::Data>) -> Ve
 
 pub fn load_meshes(document: &Document, buffers: &Vec<Data>) -> Vec<Mesh> {
     let mut meshes = Vec::new();
-    // println!("Meshes len: {}", document.meshes().len());
 
     for gltf_mesh in document.meshes() {
-        // println!("Primitives len: {}", gltf_mesh.primitives().len());
 
         for gltf_primitive in gltf_mesh.primitives() {
             let mut mesh = Mesh::default();
@@ -114,8 +112,6 @@ pub fn load_meshes(document: &Document, buffers: &Vec<Data>) -> Vec<Mesh> {
                 let vertex_color: Option<Color> =
                     colors.get(index as usize).map(|v| v.clone().into());
 
-                // println!("{:?}", vertex_texcoord);
-                // println!("{:?}", vertex_position);
                 mesh.vertices.push(Vertex {
                     position: vertex_position.extend(1.0),
                     normal: vertex_normal,

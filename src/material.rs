@@ -16,8 +16,8 @@ pub struct Material {
 impl Default for Material {
     fn default() -> Self {
         Self {
-            ambient: Vec3::new(0.1, 0.2, 0.3),
-            diffuse: Vec3::new(0.64, 0.64, 0.64),
+            ambient: Vec3::new(1.0, 1.0, 1.0),
+            diffuse: Vec3::new(0.14, 0.24, 0.34),
             specular: Vec3::new(0.5, 0.5, 0.5),
             shininess: 64.0,
         }

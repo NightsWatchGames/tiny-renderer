@@ -9,15 +9,17 @@ use crate::{
     texture::TextureStorage,
 };
 
-const AMBIENT_LIGHT_INTENSITY: f32 = 2.0;
+const AMBIENT_LIGHT_INTENSITY: f32 = 0.2;
 
 // TODO 使用引用+生命周期
 #[derive(Debug, Clone, Default)]
 pub struct FragmentShaderPayload {
     pub triangle: [Vertex; 3],
+    pub world_positions: [Vec3; 3],
     pub view_space_positions: [Vec3; 3],
     pub barycenter: Vec3,
     pub light: PointLight,
+    pub camera_position: Vec3,
     pub material: Material,
 }
 
@@ -37,15 +39,17 @@ pub struct Uniforms {
 
 pub fn phong_shader() -> FragmentShader {
     Box::new(|payload, texture_storage| {
-        let view_space_positions = payload.view_space_positions;
+        let world_positions = payload.world_positions;
+        let camera_pos = payload.camera_position;
         let triangle = payload.triangle;
         let barycenter = payload.barycenter;
         let light = payload.light;
         let material = payload.material;
+
         // 着色点
-        let pos = view_space_positions[0] * barycenter.x
-            + view_space_positions[1] * barycenter.y
-            + view_space_positions[2] * barycenter.z;
+        let pos = world_positions[0] * barycenter.x
+            + world_positions[1] * barycenter.y
+            + world_positions[2] * barycenter.z;
         let texcoord = triangle[0].texcoord.unwrap() * barycenter.x
             + triangle[1].texcoord.unwrap() * barycenter.y
             + triangle[2].texcoord.unwrap() * barycenter.z;
@@ -53,13 +57,6 @@ pub fn phong_shader() -> FragmentShader {
             .texture_id_map
             .get(&0)
             .map(|texture| texture.sample(texcoord));
-
-        // 漫反射系数
-        // let kd = if let Some(texcolor) = texcolor {
-        // texcolor.to_vec3()
-        // } else {
-        // material.diffuse
-        // };
 
         // TODO 处理unwrap / 使用宏简化
         // 法线
@@ -70,7 +67,7 @@ pub fn phong_shader() -> FragmentShader {
         // 入射光线向量
         let l = (light.position - pos).normalize();
         // 视线向量
-        let v = (Vec3::ZERO - pos).normalize();
+        let v = (camera_pos - pos).normalize();
         // 半程向量
         let h = (l + v).normalize();
         // 入射光线距离
@@ -80,25 +77,12 @@ pub fn phong_shader() -> FragmentShader {
         let ambient = material.ambient * AMBIENT_LIGHT_INTENSITY;
         // 漫反射
         let diffuse = material.diffuse * (light.intensity / (r * r)) * n.dot(l).max(0.0);
-        if diffuse.x < 0.00001 {
-            // println!("diffuse: {:?}", diffuse);
-        }
-        // println!("diffuse: {:?}", diffuse);
         // 镜面反射
         let specular = material.specular
             * (light.intensity / (r * r))
             * (n.dot(h).max(0.0).powf(material.shininess));
-        if n.dot(h) > 0.9 && r * r < 100. {
-            // println!("n.dot(h): {:?}, r*r: {:?}", n.dot(h), r*r);
-        }
-        // println!("light.intensity: {:?}, r*r: {:?}", light.intensity, r*r);
-        if specular.x > 1.0 || specular.y > 1.0 || specular.z > 1.0 {
-            // println!("specular: {:?}", specular);
-        }
-        // println!("specular: {:?}", specular);
 
-        // let light = ambient + diffuse + specular;
-        let light = ambient + diffuse;
+        let light = ambient + diffuse + specular;
         let (mut r, mut g, mut b) = if let Some(texcolor) = texcolor {
             (
                 light.x * texcolor.r,

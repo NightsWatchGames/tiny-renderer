@@ -41,8 +41,8 @@ pub fn main() {
 
     // let (meshes, texture_storage) = load_glft("assets/cube/cube.gltf");
     // let (meshes, texture_storage) = load_glft("assets/monkey/monkey.gltf");
-    let (meshes, texture_storage) = load_glft("assets/box-textured/BoxTextured.gltf");
-    // let (meshes, texture_storage) = load_glft("assets/sphere/sphere.gltf");
+    // let (meshes, texture_storage) = load_glft("assets/box-textured/BoxTextured.gltf");
+    let (meshes, texture_storage) = load_glft("assets/sphere/sphere.gltf");
     // let (meshes, texture_storage) = load_glft("assets/suzanne/Suzanne.gltf");
     // let (meshes, texture_storage) = load_glft("assets/cornell-box.gltf");
     // let (meshes, texture_storage) = custom_cube();
@@ -50,8 +50,8 @@ pub fn main() {
     let model_transformation = translation_mat4(model_pos);
 
     let light = PointLight {
-        position: Vec3::new(-2.0, 0.0, 0.0),
-        intensity: 10000.0,
+        position: Vec3::new(-5.0, 5.0, 5.0),
+        intensity: 100.0,
     };
 
     let mut camera = Camera::new(
@@ -59,9 +59,7 @@ pub fn main() {
         1000.0,
         WINDOW_WIDTH as f32 / WINDOW_HEIGHT as f32,
         60.0f32.to_radians(),
-        // Vec3::ZERO
-        // Vec3::new(3.0, 4.0, 5.0),
-        Vec3::new(2.0, 3.0, 4.0),
+        Vec3::new(1.0, 2.0, 3.0),
     );
     camera.look_at(model_pos, Vec3::Y);
 

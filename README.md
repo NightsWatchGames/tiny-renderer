@@ -11,7 +11,7 @@
 - [x] 顶点和片段着色器
 - [x] 重心坐标插值
 - [x] 透视矫正
-- [ ] Blinn–Phong反射模型
+- [x] Blinn–Phong反射模型
 - [x] 纹理映射
 - [x] 相机控制
 
@@ -37,11 +37,14 @@ cargo run --example rendering
 ![wireframe_rendering](./screenshots/wireframe_rendering.png)
 ![vertex_color_interpolation](./screenshots/vertex_color_interpolation.png)
 ![texture_mapping](./screenshots/texture_mapping.png)
+![blinn_phong_texture](./screenshots/blinn_phong_texture.png)
+![blinn_phong_color](./screenshots/blinn_phong_color.png)
 
 ## 参考
 - [ssloy/tinyrenderer](https://github.com/ssloy/tinyrenderer) and [wiki](https://github.com/ssloy/tinyrenderer/wiki)
 - [skywind3000/mini3d](https://github.com/skywind3000/mini3d)
 - [VisualGMQ/rs-cpurenderer](https://github.com/VisualGMQ/rs-cpurenderer)
+- [arrayJY/tiny-renderer](https://github.com/arrayJY/tiny-renderer)
 - [线性代数的本质 - B站](https://www.bilibili.com/video/BV1ys411472E)
 - [GAMES101 - B站](https://www.bilibili.com/video/BV1X7411F744/)
 - [bresenham算法绘制直线 - B站](https://www.bilibili.com/video/BV1364y1d7Lo)
@@ -49,3 +52,4 @@ cargo run --example rendering
 - [四元数的可视化 - B站](https://www.bilibili.com/video/BV1SW411y7W1)
 - [如何形象地理解四元数？ - 知乎](https://www.zhihu.com/question/23005815)
 - [Cohen–Sutherland线段裁剪算法 - Wikipedia](https://en.wikipedia.org/wiki/Cohen%E2%80%93Sutherland_algorithm)
+- [图形学 - 关于透视矫正插值那些事 - 知乎](https://zhuanlan.zhihu.com/p/403259571)

@@ -100,6 +100,8 @@ impl Renderer {
                     mesh.vertices[2 + i * 3],
                 ];
 
+                let world_positions: [Vec3; 3] = triangle.map(|v| v.position.to_cartesian_point());
+
                 // 顶点着色
                 self.vertex_shading(&mut triangle);
 
@@ -107,7 +109,7 @@ impl Renderer {
                 self.apply_model_transformation(&mut triangle, model_transformation);
 
                 // 视图变换
-                self.apply_view_transformation(&mut triangle, &mut light);
+                self.apply_view_transformation(&mut triangle);
 
                 // 保存视图空间坐标
                 let view_space_positions: [Vec3; 3] =
@@ -131,6 +133,7 @@ impl Renderer {
 
                 // 光栅化
                 self.rasterize_trianlge(
+                    world_positions,
                     view_space_positions,
                     triangle,
                     &mesh.material,
@@ -143,6 +146,7 @@ impl Renderer {
 
     pub fn rasterize_trianlge(
         &mut self,
+        world_positions: [Vec3; 3],
         view_space_positions: [Vec3; 3],
         triangle: [Vertex; 3],
         material: &Material,
@@ -177,9 +181,11 @@ impl Renderer {
                             if let Some(fragment_shader) = &self.fragment_shader {
                                 let fragment_shader_payload = FragmentShaderPayload {
                                     triangle,
+                                    world_positions,
                                     view_space_positions,
                                     barycenter: Vec3::new(alpha, beta, gamma),
                                     light: light.clone(),
+                                    camera_position: self.camera.position,
                                     material: material.clone(),
                                     ..Default::default()
                                 };
@@ -219,13 +225,11 @@ impl Renderer {
         }
     }
 
-    pub fn apply_view_transformation(&mut self, vertices: &mut [Vertex], light: &mut PointLight) {
+    pub fn apply_view_transformation(&mut self, vertices: &mut [Vertex]) {
         let view_transformation = self.camera.view_transformation();
         for vertex in vertices.iter_mut() {
             vertex.position = view_transformation * vertex.position;
         }
-        // 光源视图变换
-        light.position = (view_transformation * light.position.extend(1.0)).to_cartesian_point();
     }
 
     pub fn apply_projection_transformation(&self, vertices: &mut [Vertex]) {
@@ -430,7 +434,7 @@ impl Renderer {
         z_interpolated
     }
 
-    // 透视矫正
+    // TODO 透视矫正
     pub fn perspective_correct(
         triangle: &[Vertex; 3],
         (alpha, beta, gamma): (f32, f32, f32),
@@ -439,10 +443,6 @@ impl Renderer {
         let w1 = triangle[1].position.w.recip() * beta;
         let w2 = triangle[2].position.w.recip() * gamma;
         let normalizer = 1.0 / (w0 + w1 + w2);
-        println!(
-            "sum: {}",
-            w0 * normalizer + w1 * normalizer + w2 * normalizer
-        );
         (w0 * normalizer, w1 * normalizer, w2 * normalizer)
     }
 
