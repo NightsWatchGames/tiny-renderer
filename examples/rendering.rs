@@ -41,8 +41,8 @@ pub fn main() {
 
     // let (meshes, texture_storage) = load_glft("assets/cube/cube.gltf");
     // let (meshes, texture_storage) = load_glft("assets/monkey/monkey.gltf");
-    // let (meshes, texture_storage) = load_glft("assets/box-textured/BoxTextured.gltf");
-    let (meshes, texture_storage) = load_glft("assets/sphere/sphere.gltf");
+    let (meshes, texture_storage) = load_glft("assets/box-textured/BoxTextured.gltf");
+    // let (meshes, texture_storage) = load_glft("assets/sphere/sphere.gltf");
     // let (meshes, texture_storage) = load_glft("assets/suzanne/Suzanne.gltf");
     // let (meshes, texture_storage) = load_glft("assets/cornell-box.gltf");
     // let (meshes, texture_storage) = custom_cube();

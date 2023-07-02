@@ -2,7 +2,7 @@ use rand::Rng;
 
 use crate::{
     color::Color,
-    math::Vec3,
+    math::{Vec3, Vec4},
     mesh::{Mesh, Vertex},
     texture::TextureStorage,
 };
@@ -31,15 +31,15 @@ pub fn rand_color() -> Color {
 }
 
 pub fn custom_cube() -> (Vec<Mesh>, TextureStorage) {
-    let p0 = Vec3::new(-1.0, 1.0, 1.0);
-    let p1 = Vec3::new(1.0, 1.0, 1.0);
-    let p2 = Vec3::new(-1.0, -1.0, 1.0);
-    let p3 = Vec3::new(1.0, -1.0, 1.0);
+    let p0 = Vec3::new(-1.0, 1.0, 1.0).extend(1.0);
+    let p1 = Vec3::new(1.0, 1.0, 1.0).extend(1.0);
+    let p2 = Vec3::new(-1.0, -1.0, 1.0).extend(1.0);
+    let p3 = Vec3::new(1.0, -1.0, 1.0).extend(1.0);
 
-    let p4 = Vec3::new(-1.0, 1.0, -1.0);
-    let p5 = Vec3::new(1.0, 1.0, -1.0);
-    let p6 = Vec3::new(-1.0, -1.0, -1.0);
-    let p7 = Vec3::new(1.0, -1.0, -1.0);
+    let p4 = Vec3::new(-1.0, 1.0, -1.0).extend(1.0);
+    let p5 = Vec3::new(1.0, 1.0, -1.0).extend(1.0);
+    let p6 = Vec3::new(-1.0, -1.0, -1.0).extend(1.0);
+    let p7 = Vec3::new(1.0, -1.0, -1.0).extend(1.0);
 
     let mut vertices = Vec::new();
 
@@ -70,7 +70,7 @@ pub fn custom_cube() -> (Vec<Mesh>, TextureStorage) {
     )
 }
 
-pub fn build_trangle(p0: Vec3, p1: Vec3, p2: Vec3) -> Vec<Vertex> {
+pub fn build_trangle(p0: Vec4, p1: Vec4, p2: Vec4) -> Vec<Vertex> {
     vec![
         Vertex {
             position: p0,

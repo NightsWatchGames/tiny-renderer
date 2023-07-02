@@ -4,7 +4,7 @@ use crate::{
     camera::Camera,
     color::Color,
     light::PointLight,
-    material::{Material, self},
+    material::{self, Material},
     math::{Mat4, Vec2, Vec3, Vec4},
     mesh::{Mesh, Vertex},
     shader::{FragmentShader, FragmentShaderPayload, VertexShader},
@@ -108,13 +108,17 @@ impl Renderer {
                 light.position = (self.camera.view_transformation() * light.position.extend(1.0))
                     .to_cartesian_point();
                 for vertex in ori_triangle.iter_mut() {
-                    vertex.position = (self.camera.view_transformation()
-                        * vertex.position.extend(1.0))
-                    .to_cartesian_point();
+                    vertex.position = self.camera.view_transformation() * vertex.position;
                 }
                 // TODO 视椎体裁剪
                 // 视口变换
                 self.apply_viewport_transformation(&mut triangle);
+
+                // 线框渲染
+                if self.settings.wireframe {
+                    self.draw_wireframe(&triangle, Color::WHITE);
+                }
+
                 // 光栅化
                 self.rasterize_trianlge(
                     ori_triangle,
@@ -135,40 +139,15 @@ impl Renderer {
         light: &PointLight,
         texture_storage: &TextureStorage,
     ) {
-        // 线框渲染
-        if self.settings.wireframe {
-            self.draw_line(
-                Vec2::new(triangle[0].position.x, triangle[0].position.y),
-                Vec2::new(triangle[1].position.x, triangle[1].position.y),
-                Color::WHITE,
-            );
-            self.draw_line(
-                Vec2::new(triangle[1].position.x, triangle[1].position.y),
-                Vec2::new(triangle[2].position.x, triangle[2].position.y),
-                Color::WHITE,
-            );
-            self.draw_line(
-                Vec2::new(triangle[2].position.x, triangle[2].position.y),
-                Vec2::new(triangle[0].position.x, triangle[0].position.y),
-                Color::WHITE,
-            );
-        }
-
         // 包围盒
         let aabb2d = bounding_box2d(&triangle.map(|v| Vec2::new(v.position.x, v.position.y)));
 
         // 光栅化
         for x in aabb2d.min.x as u32..=aabb2d.max.x as u32 {
             for y in aabb2d.min.y as u32..=aabb2d.max.y as u32 {
-
                 // 计算屏幕三角形重心坐标
                 let p = Vec2::new(x as f32, y as f32);
-                let (alpha, beta, gamma) = barycentric_2d(
-                    p,
-                    triangle[0].position.truncate(),
-                    triangle[1].position.truncate(),
-                    triangle[2].position.truncate(),
-                );
+                let (alpha, beta, gamma) = barycentric_2d_triangle(p, &triangle);
 
                 // 判断是否在三角形内
                 if alpha > 0.0 && beta > 0.0 && gamma > 0.0 {
@@ -232,16 +211,25 @@ impl Renderer {
             Projection::Orthographic => self.camera.frustum.ortho_projection_transformation(),
         };
         for vertex in vertices.iter_mut() {
-            vertex.position = (projection_transformation
+            vertex.position = projection_transformation
                 * view_transformation
                 * model_transformation
-                * vertex.position.extend(1.0))
-            .to_cartesian_point();
+                * vertex.position;
+        }
+
+        // TODO 保存真实z值
+
+        // 透视除法
+        for vertex in vertices.iter_mut() {
+            vertex.position.x /= vertex.position.w;
+            vertex.position.y /= vertex.position.w;
+            vertex.position.z /= vertex.position.w;
+            vertex.position.w = 1.0;
         }
         for vertex in vertices.iter() {
             // println!("after proj trans, pos: {:?}", vertex.position);
-            assert!(vertex.position.x.abs() <= 1.0);
-            assert!(vertex.position.y.abs() <= 1.0);
+            // assert!(vertex.position.x.abs() <= 1.0);
+            // assert!(vertex.position.y.abs() <= 1.0);
             // println!("after proj trans, pos.z: {:?}", vertex.position.z);
             // FIXME 存在问题，asset失败
             // assert!(vertex.position.z.abs() <= 1.0);
@@ -279,6 +267,14 @@ impl Renderer {
         self.frame_buffer[index * 3] = (color.r * 255.) as u8;
         self.frame_buffer[index * 3 + 1] = (color.g * 255.) as u8;
         self.frame_buffer[index * 3 + 2] = (color.b * 255.) as u8;
+    }
+
+    pub fn draw_wireframe(&mut self, vertices: &[Vertex], color: Color) {
+        for i in 0..vertices.len() {
+            let p0 = vertices[i].position;
+            let p1 = vertices[(i + 1) % vertices.len()].position;
+            self.draw_line(Vec2::new(p0.x, p0.y), Vec2::new(p1.x, p1.y), color);
+        }
     }
 
     // Bresenham画线算法
@@ -416,6 +412,14 @@ impl Renderer {
 }
 
 // 2D重心坐标
+pub fn barycentric_2d_triangle(p: Vec2, triangle: &[Vertex; 3]) -> (f32, f32, f32) {
+    barycentric_2d(
+        p,
+        Vec2::new(triangle[0].position.x, triangle[0].position.y),
+        Vec2::new(triangle[1].position.x, triangle[1].position.y),
+        Vec2::new(triangle[2].position.x, triangle[2].position.y),
+    )
+}
 pub fn barycentric_2d(p: Vec2, a: Vec2, b: Vec2, c: Vec2) -> (f32, f32, f32) {
     let area_twice = (b - a).cross(c - a);
     let alpha = (b - p).cross(c - p) / area_twice;

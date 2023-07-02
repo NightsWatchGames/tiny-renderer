@@ -117,7 +117,7 @@ pub fn load_meshes(document: &Document, buffers: &Vec<Data>) -> Vec<Mesh> {
                 // println!("{:?}", vertex_texcoord);
                 // println!("{:?}", vertex_position);
                 mesh.vertices.push(Vertex {
-                    position: vertex_position,
+                    position: vertex_position.extend(1.0),
                     normal: vertex_normal,
                     texcoord: vertex_texcoord,
                     // 如果顶点没有颜色，就随机生成一个

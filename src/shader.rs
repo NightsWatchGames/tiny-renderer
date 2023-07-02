@@ -55,9 +55,9 @@ pub fn phong_shader() -> FragmentShader {
 
         // 漫反射系数
         // let kd = if let Some(texcolor) = texcolor {
-            // texcolor.to_vec3()
+        // texcolor.to_vec3()
         // } else {
-            // material.diffuse
+        // material.diffuse
         // };
 
         // TODO 处理unwrap / 使用宏简化
@@ -67,13 +67,13 @@ pub fn phong_shader() -> FragmentShader {
             + ori_triangle[2].normal.unwrap() * barycenter.z)
             .normalize();
         // 入射光线向量
-        let l = (light.position - pos).normalize();
+        let l = (light.position - pos.to_cartesian_point()).normalize();
         // 视线向量
-        let v = (Vec3::ZERO - pos).normalize();
+        let v = (Vec3::ZERO - pos.to_cartesian_point()).normalize();
         // 半程向量
         let h = (l + v).normalize();
         // 入射光线距离
-        let r = (light.position - pos).length();
+        let r = (light.position - pos.to_cartesian_point()).length();
 
         // 环境光
         let ambient = material.ambient * AMBIENT_LIGHT_INTENSITY;
@@ -87,7 +87,7 @@ pub fn phong_shader() -> FragmentShader {
         let specular = material.specular
             * (light.intensity / (r * r))
             * (n.dot(h).max(0.0).powf(material.shininess));
-        if n.dot(h) > 0.9 && r*r < 100. {
+        if n.dot(h) > 0.9 && r * r < 100. {
             // println!("n.dot(h): {:?}, r*r: {:?}", n.dot(h), r*r);
         }
         // println!("light.intensity: {:?}, r*r: {:?}", light.intensity, r*r);
@@ -99,7 +99,11 @@ pub fn phong_shader() -> FragmentShader {
         // let light = ambient + diffuse + specular;
         let light = ambient + diffuse;
         let (mut r, mut g, mut b) = if let Some(texcolor) = texcolor {
-            (light.x * texcolor.r, light.y * texcolor.g, light.z * texcolor.b)
+            (
+                light.x * texcolor.r,
+                light.y * texcolor.g,
+                light.z * texcolor.b,
+            )
         } else {
             (light.x, light.y, light.z)
         };
