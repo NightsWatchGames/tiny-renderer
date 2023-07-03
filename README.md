@@ -1,3 +1,5 @@
+[English](./README_EN.md)
+
 # tiny-renderer 简单的光栅化软渲染器
 - [x] 基础数学库
 - [x] Bresenham画线算法
