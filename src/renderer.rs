@@ -1,11 +1,9 @@
-use std::default;
-
 use crate::{
     camera::Camera,
     color::Color,
     light::PointLight,
-    material::{self, Material},
-    math::{Mat4, Vec2, Vec3, Vec4},
+    material::Material,
+    math::{Mat4, Vec2, Vec3},
     mesh::{Mesh, Vertex},
     shader::{FragmentShader, FragmentShaderPayload, VertexShader},
     texture::TextureStorage,
@@ -89,7 +87,7 @@ impl Renderer {
         &mut self,
         meshes: &Vec<Mesh>,
         model_transformation: Mat4,
-        mut light: PointLight,
+        light: PointLight,
         texture_storage: &TextureStorage,
     ) {
         for mesh in meshes.iter() {
@@ -169,11 +167,11 @@ impl Renderer {
             for y in aabb2d.min.y as u32..=aabb2d.max.y as u32 {
                 // 计算屏幕三角形重心坐标
                 let p = Vec2::new(x as f32, y as f32);
-                let (alpha, beta, gamma) = barycentric_2d_triangle(p, &triangle);
+                let barycenter = barycentric_2d_triangle(p, &triangle);
 
                 // 判断是否在三角形内
-                if Self::inside_triangle((alpha, beta, gamma)) {
-                    let z = Self::z_interpolation(&triangle, (alpha, beta, gamma));
+                if Self::inside_triangle(barycenter) {
+                    let z = Self::z_interpolation(&triangle, barycenter);
                     let index = (y * self.viewport.width + x) as usize;
 
                     // 深度测试
@@ -181,8 +179,7 @@ impl Renderer {
                         self.depth_buffer[index] = z;
 
                         // 透视矫正
-                        let (alpha, beta, gamma) =
-                            Self::perspective_correct(&triangle, (alpha, beta, gamma));
+                        let barycenter = Self::perspective_correct(&triangle, barycenter);
 
                         if self.settings.fragment_shading {
                             // 片段着色
@@ -191,9 +188,9 @@ impl Renderer {
                                     triangle,
                                     world_positions,
                                     view_space_positions,
-                                    barycenter: Vec3::new(alpha, beta, gamma),
+                                    barycenter,
                                     light: light.clone(),
-                                    camera_position: self.camera.position,
+                                    camera_world_position: self.camera.position,
                                     material: material.clone(),
                                     ..Default::default()
                                 };
@@ -207,9 +204,9 @@ impl Renderer {
                                 && triangle[1].color.is_some()
                                 && triangle[2].color.is_some()
                             {
-                                let color = triangle[0].color.unwrap() * alpha
-                                    + triangle[1].color.unwrap() * beta
-                                    + triangle[2].color.unwrap() * gamma;
+                                let color = triangle[0].color.unwrap() * barycenter.0
+                                    + triangle[1].color.unwrap() * barycenter.1
+                                    + triangle[2].color.unwrap() * barycenter.2;
                                 self.draw_pixel(p, color);
                             }
                         }
@@ -261,6 +258,14 @@ impl Renderer {
                 / 2.0
                 + self.viewport.y as f32;
         }
+    }
+
+    pub fn frustum_cull(&self, _triangle: [Vec3; 3]) -> bool {
+        todo!()
+    }
+
+    pub fn homogeneous_clip() {
+        todo!()
     }
 
     pub fn back_face_cull(triangle: [Vec3; 3], view_direction: Vec3) -> bool {
@@ -448,7 +453,7 @@ impl Renderer {
         z_interpolated
     }
 
-    // TODO 透视矫正
+    // TODO 理解透视矫正
     pub fn perspective_correct(
         triangle: &[Vertex; 3],
         (alpha, beta, gamma): (f32, f32, f32),

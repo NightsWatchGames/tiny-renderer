@@ -120,8 +120,8 @@ pub fn load_meshes(document: &Document, buffers: &Vec<Data>) -> Vec<Mesh> {
                 });
             }
 
-            // 材质
-            let mut material = Material::default();
+            // 材质（采用默认的blinn-phong材质）
+            let material = Material::default();
             // let gltf_material = gltf_primitive.material();
             mesh.material = material;
 

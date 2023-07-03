@@ -1,4 +1,4 @@
-use crate::math::{Mat3, Mat4, Quat, Vec3, Vec4};
+use crate::math::{Mat4, Quat, Vec3, Vec4};
 
 // 缩放矩阵
 pub fn scale_mat4(scale: Vec3) -> Mat4 {

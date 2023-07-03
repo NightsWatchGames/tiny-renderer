@@ -1,4 +1,4 @@
-use crate::math::{Vec3, Vec4};
+use crate::math::Vec3;
 
 // Blinn-Phong 材质
 #[derive(Clone, Copy, Debug)]

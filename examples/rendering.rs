@@ -1,8 +1,7 @@
 use fltk::{
     app::{event_key_down, set_visual},
     enums::{Key, Mode},
-    prelude::{DisplayExt, GroupExt, WidgetBase, WidgetExt},
-    text,
+    prelude::{GroupExt, WidgetBase, WidgetExt},
     window::Window,
 };
 use tiny_renderer::{

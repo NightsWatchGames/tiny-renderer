@@ -17,9 +17,9 @@ pub struct FragmentShaderPayload {
     pub triangle: [Vertex; 3],
     pub world_positions: [Vec3; 3],
     pub view_space_positions: [Vec3; 3],
-    pub barycenter: Vec3,
+    pub barycenter: (f32, f32, f32),
     pub light: PointLight,
-    pub camera_position: Vec3,
+    pub camera_world_position: Vec3,
     pub material: Material,
 }
 
@@ -40,19 +40,18 @@ pub struct Uniforms {
 pub fn phong_shader() -> FragmentShader {
     Box::new(|payload, texture_storage| {
         let world_positions = payload.world_positions;
-        let camera_pos = payload.camera_position;
+        let camera_world_position = payload.camera_world_position;
         let triangle = payload.triangle;
-        let barycenter = payload.barycenter;
+        let (alpha, beta, gamma) = payload.barycenter;
         let light = payload.light;
         let material = payload.material;
 
         // 着色点
-        let pos = world_positions[0] * barycenter.x
-            + world_positions[1] * barycenter.y
-            + world_positions[2] * barycenter.z;
-        let texcoord = triangle[0].texcoord.unwrap() * barycenter.x
-            + triangle[1].texcoord.unwrap() * barycenter.y
-            + triangle[2].texcoord.unwrap() * barycenter.z;
+        let pos =
+            world_positions[0] * alpha + world_positions[1] * beta + world_positions[2] * gamma;
+        let texcoord = triangle[0].texcoord.unwrap() * alpha
+            + triangle[1].texcoord.unwrap() * beta
+            + triangle[2].texcoord.unwrap() * gamma;
         let texcolor = texture_storage
             .texture_id_map
             .get(&0)
@@ -60,14 +59,14 @@ pub fn phong_shader() -> FragmentShader {
 
         // TODO 处理unwrap / 使用宏简化
         // 法线
-        let n = (triangle[0].normal.unwrap() * barycenter.x
-            + triangle[1].normal.unwrap() * barycenter.y
-            + triangle[2].normal.unwrap() * barycenter.z)
+        let n = (triangle[0].normal.unwrap() * alpha
+            + triangle[1].normal.unwrap() * beta
+            + triangle[2].normal.unwrap() * gamma)
             .normalize();
         // 入射光线向量
         let l = (light.position - pos).normalize();
         // 视线向量
-        let v = (camera_pos - pos).normalize();
+        let v = (camera_world_position - pos).normalize();
         // 半程向量
         let h = (l + v).normalize();
         // 入射光线距离
