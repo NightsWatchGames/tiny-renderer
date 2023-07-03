@@ -111,6 +111,14 @@ impl Renderer {
                 // 视图变换
                 self.apply_view_transformation(&mut triangle);
 
+                // 背面剔除
+                if Self::back_face_cull(
+                    triangle.map(|v| v.position.to_cartesian_point()),
+                    Vec3::NEG_Z,
+                ) {
+                    continue;
+                }
+
                 // 保存视图空间坐标
                 let view_space_positions: [Vec3; 3] =
                     triangle.map(|v| v.position.to_cartesian_point());
@@ -253,6 +261,12 @@ impl Renderer {
                 / 2.0
                 + self.viewport.y as f32;
         }
+    }
+
+    pub fn back_face_cull(triangle: [Vec3; 3], view_direction: Vec3) -> bool {
+        // 默认三角形顶点顺序为逆时针
+        let normal = (triangle[1] - triangle[0]).cross(triangle[2] - triangle[0]);
+        normal.dot(view_direction) > 0.0
     }
 
     // 绘制像素点

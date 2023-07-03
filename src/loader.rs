@@ -64,7 +64,6 @@ pub fn load_meshes(document: &Document, buffers: &Vec<Data>) -> Vec<Mesh> {
     let mut meshes = Vec::new();
 
     for gltf_mesh in document.meshes() {
-
         for gltf_primitive in gltf_mesh.primitives() {
             let mut mesh = Mesh::default();
 
