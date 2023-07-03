@@ -19,12 +19,12 @@ use tiny_renderer::{
 const WINDOW_WIDTH: u32 = 1024;
 const WINDOW_HEIGHT: u32 = 720;
 
-const MODEL_LIST: [&str; 5] = [
-    "assets/cube/cube.gltf",
+const MODEL_LIST: [&str; 3] = [
+    // "assets/cube/cube.gltf",
     "assets/monkey/monkey.gltf",
     "assets/box-textured/BoxTextured.gltf",
     "assets/sphere/sphere.gltf",
-    "assets/suzanne/Suzanne.gltf",
+    // "assets/suzanne/Suzanne.gltf",
     // "assets/cornell-box.gltf",
 ];
 

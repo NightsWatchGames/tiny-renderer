@@ -32,9 +32,12 @@ cargo run --example rendering
 - F2 切换顶点颜色插值
 - F3 切换片段着色
 - F4 切换投影方式
+- F5 切换模型
 - W/A/S/D/Q/E 控制相机移动
 
 ## 截图
+视频演示：[B站](https://www.bilibili.com/video/BV1Mu411b7f7)
+
 ![bresenham_line](./screenshots/bresenham_line.png)
 ![wireframe_rendering](./screenshots/wireframe_rendering.png)
 ![vertex_color_interpolation](./screenshots/vertex_color_interpolation.png)

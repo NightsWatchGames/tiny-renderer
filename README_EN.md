@@ -30,9 +30,12 @@ Control
 - F2 Toggle vertex color interpolation
 - F3 Toggle fragment shading
 - F4 Toggle projection mode
+- F5 Switch model
 - W/A/S/D/Q/E Control camera movement
 
 ## Screenshots
+Video: [YouTube](https://www.youtube.com/watch?v=m8yv6-QOPoI)
+
 ![bresenham_line](./screenshots/bresenham_line.png)
 ![wireframe_rendering](./screenshots/wireframe_rendering.png)
 ![vertex_color_interpolation](./screenshots/vertex_color_interpolation.png)
