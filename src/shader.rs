@@ -49,13 +49,26 @@ pub fn phong_shader() -> FragmentShader {
         // 着色点
         let pos =
             world_positions[0] * alpha + world_positions[1] * beta + world_positions[2] * gamma;
-        let texcoord = triangle[0].texcoord.unwrap() * alpha
-            + triangle[1].texcoord.unwrap() * beta
-            + triangle[2].texcoord.unwrap() * gamma;
-        let texcolor = texture_storage
-            .texture_id_map
-            .get(&0)
-            .map(|texture| texture.sample(texcoord));
+        let texcoord = if triangle[0].texcoord.is_some()
+            && triangle[1].texcoord.is_some()
+            && triangle[2].texcoord.is_some()
+        {
+            Some(
+                triangle[0].texcoord.unwrap() * alpha
+                    + triangle[1].texcoord.unwrap() * beta
+                    + triangle[2].texcoord.unwrap() * gamma,
+            )
+        } else {
+            None
+        };
+        let texcolor = if texcoord.is_some() {
+            texture_storage
+                .texture_id_map
+                .get(&0)
+                .map(|texture| texture.sample(texcoord.unwrap()))
+        } else {
+            None
+        };
 
         // TODO 处理unwrap / 使用宏简化
         // 法线

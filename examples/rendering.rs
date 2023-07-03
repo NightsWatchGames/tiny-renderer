@@ -19,6 +19,15 @@ use tiny_renderer::{
 const WINDOW_WIDTH: u32 = 1024;
 const WINDOW_HEIGHT: u32 = 720;
 
+const MODEL_LIST: [&str; 5] = [
+    "assets/cube/cube.gltf",
+    "assets/monkey/monkey.gltf",
+    "assets/box-textured/BoxTextured.gltf",
+    "assets/sphere/sphere.gltf",
+    "assets/suzanne/Suzanne.gltf",
+    // "assets/cornell-box.gltf",
+];
+
 pub fn main() {
     println!(
         "
@@ -26,6 +35,7 @@ pub fn main() {
         F2: toggle vertex color interpolation
         F3: toggle fragment shading
         F4: toggle projection
+        F5: switch model
         W/A/S/D/Q/E: move camera
     "
     );
@@ -38,13 +48,9 @@ pub fn main() {
         "rendering",
     );
 
-    // let (meshes, texture_storage) = load_glft("assets/cube/cube.gltf");
-    // let (meshes, texture_storage) = load_glft("assets/monkey/monkey.gltf");
-    let (meshes, texture_storage) = load_glft("assets/box-textured/BoxTextured.gltf");
-    // let (meshes, texture_storage) = load_glft("assets/sphere/sphere.gltf");
-    // let (meshes, texture_storage) = load_glft("assets/suzanne/Suzanne.gltf");
-    // let (meshes, texture_storage) = load_glft("assets/cornell-box.gltf");
     // let (meshes, texture_storage) = custom_cube();
+    let mut model_index = 0;
+    let (mut meshes, mut texture_storage) = load_glft(MODEL_LIST[model_index % MODEL_LIST.len()]);
     let model_pos = Vec3::new(0.0, 0.0, 0.0);
     let model_transformation = translation_mat4(model_pos);
 
@@ -92,6 +98,10 @@ pub fn main() {
                     tiny_renderer::renderer::Projection::Perspective
                 }
             };
+        }
+        if event_key_down(Key::F5) {
+            model_index += 1;
+            (meshes, texture_storage) = load_glft(MODEL_LIST[model_index % MODEL_LIST.len()]);
         }
         if event_key_down(Key::from_char('A')) {
             renderer
