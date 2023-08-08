@@ -430,12 +430,12 @@ impl Renderer {
         }
     }
 
-    pub fn homogeneous_division(vertexs: &mut [Vertex]) {
-        vertexs.iter_mut().for_each(|v| {
+    pub fn homogeneous_division(vertices: &mut [Vertex]) {
+        vertices.iter_mut().for_each(|v| {
             v.position.x /= v.position.w;
             v.position.y /= v.position.w;
             v.position.z /= v.position.w;
-            v.position.w = 1.0;
+            // 保留w值
         })
     }
 
